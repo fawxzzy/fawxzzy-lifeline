@@ -75,6 +75,33 @@ async function withTemporaryPlaybook(mutateSchemaVersionJson, validateError) {
   }
 }
 
+async function withTemporaryArchetype(mutateArchetypeYaml, validateError) {
+  const tempRoot = await mkdtemp(
+    path.join(tmpdir(), "lifeline-playbook-smoke-archetype-"),
+  );
+  try {
+    const tempPlaybookPath = path.join(tempRoot, "playbook-export");
+    await cp(fixturePlaybookPath, tempPlaybookPath, { recursive: true });
+
+    const archetypePath = path.join(
+      tempPlaybookPath,
+      "exports",
+      "lifeline",
+      "archetypes",
+      "node-web.yml",
+    );
+    await writeFile(archetypePath, mutateArchetypeYaml, "utf8");
+
+    const result = await run(
+      ["resolve", manifestPath, "--playbook-path", tempPlaybookPath],
+      { allowFailure: true },
+    );
+    validateError(result);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+}
+
 try {
   await cleanup();
 
@@ -171,6 +198,34 @@ try {
       if (result.code === 0 || !result.stderr.includes("schemaVersion")) {
         throw new Error(
           `Expected missing schema version to fail clearly, got:\n${result.stdout}\n${result.stderr}`,
+        );
+      }
+    },
+  );
+
+  await withTemporaryArchetype(`installCommand: 42\n`, (result) => {
+    if (
+      result.code === 0 ||
+      !result.stderr.includes("Playbook export shape is invalid")
+    ) {
+      throw new Error(
+        `Expected invalid Playbook export shape to fail clearly, got:\n${result.stdout}\n${result.stderr}`,
+      );
+    }
+  });
+
+  await withTemporaryArchetype(
+    [
+      `installCommand: node -e "console.log('install ok')"`,
+      `buildCommand: node -e "console.log('build ok')"`,
+    ].join("\n"),
+    (result) => {
+      if (
+        result.code === 0 ||
+        !result.stderr.includes("Resolved config is incomplete or invalid")
+      ) {
+        throw new Error(
+          `Expected incomplete resolved config to fail clearly, got:\n${result.stdout}\n${result.stderr}`,
         );
       }
     },

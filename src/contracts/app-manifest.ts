@@ -49,7 +49,14 @@ const isNonEmptyString = (value: unknown): value is string =>
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every(isNonEmptyString);
 
-export function validateAppManifest(value: unknown): {
+interface ValidateManifestOptions {
+  requireRunnableFields: boolean;
+}
+
+function validateManifestLike(
+  value: unknown,
+  options: ValidateManifestOptions,
+): {
   manifest?: AppManifest;
   issues: ValidationIssue[];
 } {
@@ -61,7 +68,18 @@ export function validateAppManifest(value: unknown): {
     };
   }
 
-  const checkString = (field: string, input: unknown): string | undefined => {
+  const checkString = (
+    field: string,
+    input: unknown,
+    required = options.requireRunnableFields,
+  ): string | undefined => {
+    if (input === undefined) {
+      if (required) {
+        issues.push({ path: field, message: "must be a non-empty string" });
+      }
+      return undefined;
+    }
+
     if (!isNonEmptyString(input)) {
       issues.push({ path: field, message: "must be a non-empty string" });
       return undefined;
@@ -88,10 +106,17 @@ export function validateAppManifest(value: unknown): {
 
   let projectPath: string | undefined;
   if (value.projectPath !== undefined) {
-    projectPath = checkString("projectPath", value.projectPath);
+    projectPath = checkString("projectPath", value.projectPath, false);
   }
 
-  if (
+  if (value.port === undefined) {
+    if (options.requireRunnableFields) {
+      issues.push({
+        path: "port",
+        message: "must be an integer between 1 and 65535",
+      });
+    }
+  } else if (
     typeof value.port !== "number" ||
     !Number.isInteger(value.port) ||
     value.port < 1 ||
@@ -109,7 +134,11 @@ export function validateAppManifest(value: unknown): {
 
   const envValue = value.env;
   let env: AppManifest["env"] | undefined;
-  if (!isRecord(envValue)) {
+  if (envValue === undefined) {
+    if (options.requireRunnableFields) {
+      issues.push({ path: "env", message: "must be an object" });
+    }
+  } else if (!isRecord(envValue)) {
     issues.push({ path: "env", message: "must be an object" });
   } else {
     const mode = checkString("env.mode", envValue.mode);
@@ -122,7 +151,7 @@ export function validateAppManifest(value: unknown): {
 
     let file: string | undefined;
     if (envValue.file !== undefined) {
-      file = checkString("env.file", envValue.file);
+      file = checkString("env.file", envValue.file, false);
     }
 
     if (mode === "file" && !file) {
@@ -159,7 +188,11 @@ export function validateAppManifest(value: unknown): {
 
   const deployValue = value.deploy;
   let deploy: AppManifest["deploy"] | undefined;
-  if (!isRecord(deployValue)) {
+  if (deployValue === undefined) {
+    if (options.requireRunnableFields) {
+      issues.push({ path: "deploy", message: "must be an object" });
+    }
+  } else if (!isRecord(deployValue)) {
     issues.push({ path: "deploy", message: "must be an object" });
   } else {
     const strategy = checkString("deploy.strategy", deployValue.strategy);
@@ -178,6 +211,7 @@ export function validateAppManifest(value: unknown): {
       workingDirectory = checkString(
         "deploy.workingDirectory",
         deployValue.workingDirectory,
+        false,
       );
     }
 
@@ -200,7 +234,8 @@ export function validateAppManifest(value: unknown): {
     !startCommand ||
     !healthcheckPath ||
     !env ||
-    !deploy
+    !deploy ||
+    value.port === undefined
   ) {
     return { issues };
   }
@@ -222,4 +257,17 @@ export function validateAppManifest(value: unknown): {
     },
     issues,
   };
+}
+
+export function validateAppManifest(value: unknown): {
+  manifest?: AppManifest;
+  issues: ValidationIssue[];
+} {
+  return validateManifestLike(value, { requireRunnableFields: true });
+}
+
+export function validateOptionalAppManifestDefaults(value: unknown): {
+  issues: ValidationIssue[];
+} {
+  return validateManifestLike(value, { requireRunnableFields: false });
 }

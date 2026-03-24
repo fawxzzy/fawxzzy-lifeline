@@ -1,6 +1,10 @@
 import { access, readFile } from "node:fs/promises";
 import path from "node:path";
-import type { AppArchetype, AppManifest } from "../contracts/app-manifest.js";
+import {
+  type AppArchetype,
+  type AppManifest,
+  validateOptionalAppManifestDefaults,
+} from "../contracts/app-manifest.js";
 import { ManifestLoadError, ValidationError } from "./errors.js";
 import { parseSimpleYaml } from "./load-manifest.js";
 
@@ -12,7 +16,7 @@ const ACCEPTED_PLAYBOOK_EXPORT_FAMILIES = new Set([
   LEGACY_PLAYBOOK_EXPORT_FAMILY,
 ]);
 
-export type PlaybookArchetypeDefaults = Omit<
+export type PlaybookArchetypeDefaults = Partial<
   Pick<
     AppManifest,
     | "installCommand"
@@ -22,13 +26,8 @@ export type PlaybookArchetypeDefaults = Omit<
     | "healthcheckPath"
     | "env"
     | "deploy"
-  >,
-  "env" | "deploy" | "port"
-> & {
-  port?: AppManifest["port"];
-  deploy?: AppManifest["deploy"];
-  env?: AppManifest["env"];
-};
+  >
+>;
 
 export interface PlaybookExports {
   playbookPath: string;
@@ -41,30 +40,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function assertNonEmptyString(field: string, value: unknown): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new ValidationError(
-      `Playbook export field ${field} must be a non-empty string.`,
-    );
-  }
-
-  return value;
-}
-
-function assertStringArray(field: string, value: unknown): string[] {
-  if (
-    !Array.isArray(value) ||
-    value.some(
-      (entry) => typeof entry !== "string" || entry.trim().length === 0,
-    )
-  ) {
-    throw new ValidationError(
-      `Playbook export field ${field} must be an array of non-empty strings.`,
-    );
-  }
-
-  return value;
-}
 
 function parseSchemaVersion(
   parsedSchema: Record<string, unknown>,
@@ -243,88 +218,29 @@ export async function loadPlaybookArchetypeDefaults(
     );
   }
 
-  const envValue = parsed.env;
-  if (envValue !== undefined && !isRecord(envValue)) {
+  const validation = validateOptionalAppManifestDefaults(parsed);
+  if (validation.issues.length > 0) {
+    const issueLines = validation.issues
+      .map((issue) => `- ${issue.path}: ${issue.message}`)
+      .join("\n");
     throw new ValidationError(
-      `Playbook export field env must be an object when present.`,
+      `Playbook export shape is invalid: ${archetypePath}\n${issueLines}`,
     );
   }
 
-  const deployValue = parsed.deploy;
-  if (deployValue !== undefined && !isRecord(deployValue)) {
-    throw new ValidationError(
-      `Playbook export field deploy must be an object when present.`,
-    );
-  }
-
-  const port = parsed.port;
-  if (
-    port !== undefined &&
-    (typeof port !== "number" ||
-      !Number.isInteger(port) ||
-      port < 1 ||
-      port > 65535)
-  ) {
-    throw new ValidationError(
-      "Playbook export field port must be an integer between 1 and 65535 when present.",
-    );
-  }
-
-  const envMode =
-    envValue === undefined
-      ? undefined
-      : (assertNonEmptyString("env.mode", envValue.mode) as AppManifest["env"]["mode"]);
-  const envFile =
-    envValue === undefined || envValue.file === undefined
-      ? undefined
-      : assertNonEmptyString("env.file", envValue.file);
-  const requiredKeys =
-    envValue === undefined
-      ? undefined
-      : assertStringArray("env.requiredKeys", envValue.requiredKeys ?? envValue.required);
-  const strategy =
-    deployValue === undefined
-      ? undefined
-      : (assertNonEmptyString(
-          "deploy.strategy",
-          deployValue.strategy,
-        ) as AppManifest["deploy"]["strategy"]);
-  const workingDirectory =
-    deployValue === undefined || deployValue.workingDirectory === undefined
-      ? undefined
-      : assertNonEmptyString(
-          "deploy.workingDirectory",
-          deployValue.workingDirectory,
-        );
+  const defaults = parsed as PlaybookArchetypeDefaults;
 
   return {
-    installCommand: assertNonEmptyString(
-      "installCommand",
-      parsed.installCommand,
-    ),
-    buildCommand: assertNonEmptyString("buildCommand", parsed.buildCommand),
-    startCommand: assertNonEmptyString("startCommand", parsed.startCommand),
-    ...(port !== undefined ? { port } : {}),
-    healthcheckPath: assertNonEmptyString(
-      "healthcheckPath",
-      parsed.healthcheckPath,
-    ),
-    ...(envValue
-      ? {
-          env: {
-            mode: envMode as AppManifest["env"]["mode"],
-            ...(envFile ? { file: envFile } : {}),
-            requiredKeys: requiredKeys as string[],
-          },
-        }
+    ...(defaults.installCommand
+      ? { installCommand: defaults.installCommand }
       : {}),
-    ...(deployValue
-      ? {
-          deploy: {
-            strategy: strategy as AppManifest["deploy"]["strategy"],
-            ...(workingDirectory ? { workingDirectory } : {}),
-          },
-        }
+    ...(defaults.buildCommand ? { buildCommand: defaults.buildCommand } : {}),
+    ...(defaults.startCommand ? { startCommand: defaults.startCommand } : {}),
+    ...(defaults.port !== undefined ? { port: defaults.port } : {}),
+    ...(defaults.healthcheckPath
+      ? { healthcheckPath: defaults.healthcheckPath }
       : {}),
+    ...(defaults.env ? { env: defaults.env } : {}),
+    ...(defaults.deploy ? { deploy: defaults.deploy } : {}),
   };
 }
