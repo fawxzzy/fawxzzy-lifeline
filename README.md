@@ -59,6 +59,20 @@ Lifeline only consumes the checked-in export files from disk. It does not call a
 
 If a Playbook path is supplied but invalid, Lifeline fails clearly before runtime execution.
 
+### Playbook export metadata contract
+
+Lifeline reads `<playbook-path>/exports/lifeline/schema-version.json` and accepts:
+
+- current contract: `{ "schemaVersion": <number|string>, "exportFamily": "lifeline" }`
+- legacy compatibility: `{ "version": <number> }`
+
+Behavior is explicit:
+
+- `schemaVersion` takes precedence over `version` when both are present
+- `exportFamily` must be `lifeline` when present
+- missing schema version fields fail clearly
+- unsupported schema versions fail clearly
+
 ### Merge precedence
 
 Resolution is intentionally small and explicit:

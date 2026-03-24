@@ -74,6 +74,13 @@ Path precedence:
 2. `LIFELINE_PLAYBOOK_PATH`
 3. no Playbook path, which means manifest-only mode
 
+Playbook export metadata contract:
+
+- preferred/current: `{ "schemaVersion": <number|string>, "exportFamily": "lifeline" }`
+- legacy compatibility: `{ "version": <number> }`
+- when both are present, `schemaVersion` is used
+- when `exportFamily` is present, it must be `lifeline`
+
 Merge precedence:
 
 1. Playbook archetype defaults
