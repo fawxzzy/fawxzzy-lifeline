@@ -2,6 +2,7 @@ name: runtime-smoke-app
 archetype: node-web
 repo: local-fixture
 branch: main
+port: 4310
 env:
   mode: file
   file: .env.runtime

@@ -23,8 +23,9 @@ export type PlaybookArchetypeDefaults = Omit<
     | "env"
     | "deploy"
   >,
-  "env" | "deploy"
+  "env" | "deploy" | "port"
 > & {
+  port?: AppManifest["port"];
   deploy?: AppManifest["deploy"];
   env?: AppManifest["env"];
 };
@@ -258,13 +259,14 @@ export async function loadPlaybookArchetypeDefaults(
 
   const port = parsed.port;
   if (
-    typeof port !== "number" ||
-    !Number.isInteger(port) ||
-    port < 1 ||
-    port > 65535
+    port !== undefined &&
+    (typeof port !== "number" ||
+      !Number.isInteger(port) ||
+      port < 1 ||
+      port > 65535)
   ) {
     throw new ValidationError(
-      "Playbook export field port must be an integer between 1 and 65535.",
+      "Playbook export field port must be an integer between 1 and 65535 when present.",
     );
   }
 
@@ -302,7 +304,7 @@ export async function loadPlaybookArchetypeDefaults(
     ),
     buildCommand: assertNonEmptyString("buildCommand", parsed.buildCommand),
     startCommand: assertNonEmptyString("startCommand", parsed.startCommand),
-    port,
+    ...(port !== undefined ? { port } : {}),
     healthcheckPath: assertNonEmptyString(
       "healthcheckPath",
       parsed.healthcheckPath,

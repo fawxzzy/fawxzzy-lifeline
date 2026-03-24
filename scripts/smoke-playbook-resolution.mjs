@@ -99,6 +99,11 @@ try {
       `Expected manifest deploy workingDirectory to remain in resolved output when archetype omits deploy defaults, got:\n${resolveOutput.stdout}\n${resolveOutput.stderr}`,
     );
   }
+  if (!resolveOutput.stdout.includes('"port": 4310')) {
+    throw new Error(
+      `Expected manifest port to satisfy runtime requirements when archetype omits port default, got:\n${resolveOutput.stdout}\n${resolveOutput.stderr}`,
+    );
+  }
 
   await run(["validate", manifestPath, "--playbook-path", fixturePlaybookPath]);
   await run(["up", manifestPath, "--playbook-path", fixturePlaybookPath]);
