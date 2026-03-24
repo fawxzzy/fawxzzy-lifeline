@@ -23,10 +23,14 @@ The current export loader reads:
 - `archetypes/next-web.yml`
 - `archetypes/node-web.yml`
 
+`schema-version.json` accepts the checked-in Playbook shape `{ "schemaVersion": <number|string>, "exportFamily": "lifeline" }` and keeps legacy compatibility for `{ "version": <number> }`. Lifeline normalizes either input at the boundary before continuing resolution.
+
 Failure handling is intentionally explicit:
 
 - missing export directory
 - missing schema version file
+- missing `schemaVersion`/`version`
+- wrong `exportFamily` when present
 - unsupported schema version
 - missing requested archetype file
 

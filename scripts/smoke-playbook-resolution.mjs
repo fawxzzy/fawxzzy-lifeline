@@ -1,8 +1,11 @@
 import { spawn } from "node:child_process";
+import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import process from "node:process";
 
 const cli = ["node", "dist/cli.js"];
-const playbookPath = "fixtures/playbook-export";
+const fixturePlaybookPath = "fixtures/playbook-export";
 const manifestPath =
   "fixtures/runtime-smoke-app/runtime-smoke-app.playbook.lifeline.yml";
 const appName = "runtime-smoke-app";
@@ -42,6 +45,36 @@ async function cleanup() {
   await run(["down", appName], { allowFailure: true });
 }
 
+async function withTemporaryPlaybook(mutateSchemaVersionJson, validateError) {
+  const tempRoot = await mkdtemp(
+    path.join(tmpdir(), "lifeline-playbook-smoke-"),
+  );
+  try {
+    const tempPlaybookPath = path.join(tempRoot, "playbook-export");
+    await cp(fixturePlaybookPath, tempPlaybookPath, { recursive: true });
+
+    const schemaVersionPath = path.join(
+      tempPlaybookPath,
+      "exports",
+      "lifeline",
+      "schema-version.json",
+    );
+    await writeFile(
+      schemaVersionPath,
+      JSON.stringify(mutateSchemaVersionJson, null, 2),
+      "utf8",
+    );
+
+    const result = await run(
+      ["resolve", manifestPath, "--playbook-path", tempPlaybookPath],
+      { allowFailure: true },
+    );
+    validateError(result);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
+  }
+}
+
 try {
   await cleanup();
 
@@ -49,7 +82,7 @@ try {
     "resolve",
     manifestPath,
     "--playbook-path",
-    playbookPath,
+    fixturePlaybookPath,
   ]);
   if (!resolveOutput.stdout.includes('"installCommand": "node -e')) {
     throw new Error(
@@ -57,8 +90,8 @@ try {
     );
   }
 
-  await run(["validate", manifestPath, "--playbook-path", playbookPath]);
-  await run(["up", manifestPath, "--playbook-path", playbookPath]);
+  await run(["validate", manifestPath, "--playbook-path", fixturePlaybookPath]);
+  await run(["up", manifestPath, "--playbook-path", fixturePlaybookPath]);
 
   const status = await run(["status", appName]);
   if (!status.stdout.includes("is running")) {
@@ -72,7 +105,7 @@ try {
   const envResolve = await run(["resolve", manifestPath], {
     env: {
       ...process.env,
-      LIFELINE_PLAYBOOK_PATH: playbookPath,
+      LIFELINE_PLAYBOOK_PATH: fixturePlaybookPath,
     },
   });
   if (!envResolve.stdout.includes('"healthcheckPath": "/healthz"')) {
@@ -80,6 +113,39 @@ try {
       `Expected env fallback resolution output, got:\n${envResolve.stdout}\n${envResolve.stderr}`,
     );
   }
+
+  await withTemporaryPlaybook(
+    { schemaVersion: "1", exportFamily: "lifeline" },
+    (result) => {
+      if (result.code !== 0) {
+        throw new Error(
+          `Expected schemaVersion as numeric string to be accepted, got:\n${result.stdout}\n${result.stderr}`,
+        );
+      }
+    },
+  );
+
+  await withTemporaryPlaybook(
+    { schemaVersion: 1, exportFamily: "playbook" },
+    (result) => {
+      if (
+        result.code === 0 ||
+        !result.stderr.includes("Unsupported Playbook export family")
+      ) {
+        throw new Error(
+          `Expected wrong exportFamily to fail clearly, got:\n${result.stdout}\n${result.stderr}`,
+        );
+      }
+    },
+  );
+
+  await withTemporaryPlaybook({ exportFamily: "lifeline" }, (result) => {
+    if (result.code === 0 || !result.stderr.includes("schemaVersion")) {
+      throw new Error(
+        `Expected missing schema version to fail clearly, got:\n${result.stdout}\n${result.stderr}`,
+      );
+    }
+  });
 
   await run(["down", appName]);
 } catch (error) {

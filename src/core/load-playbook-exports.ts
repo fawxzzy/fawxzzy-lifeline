@@ -1,12 +1,11 @@
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
-
-import { readFile } from "node:fs/promises";
 import type { AppArchetype, AppManifest } from "../contracts/app-manifest.js";
 import { ManifestLoadError, ValidationError } from "./errors.js";
 import { parseSimpleYaml } from "./load-manifest.js";
 
 export const SUPPORTED_PLAYBOOK_SCHEMA_VERSION = 1;
+export const SUPPORTED_PLAYBOOK_EXPORT_FAMILY = "lifeline";
 
 export type PlaybookArchetypeDefaults = Pick<
   AppManifest,
@@ -23,6 +22,7 @@ export interface PlaybookExports {
   playbookPath: string;
   exportPath: string;
   schemaVersion: number;
+  exportFamily: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -52,6 +52,62 @@ function assertStringArray(field: string, value: unknown): string[] {
   }
 
   return value;
+}
+
+function parseSchemaVersion(
+  parsedSchema: Record<string, unknown>,
+  schemaVersionPath: string,
+): number {
+  const schemaVersionRaw = parsedSchema.schemaVersion ?? parsedSchema.version;
+  if (schemaVersionRaw === undefined) {
+    throw new ValidationError(
+      `Playbook schema version file is invalid: ${schemaVersionPath}. Expected {"schemaVersion": <number|string>, "exportFamily": "lifeline"} (or legacy {"version": <number>}).`,
+    );
+  }
+
+  const normalizedVersion =
+    typeof schemaVersionRaw === "string"
+      ? Number.parseInt(schemaVersionRaw, 10)
+      : schemaVersionRaw;
+
+  if (
+    typeof normalizedVersion !== "number" ||
+    !Number.isInteger(normalizedVersion) ||
+    Number.isNaN(normalizedVersion)
+  ) {
+    throw new ValidationError(
+      `Playbook schema version file is invalid: ${schemaVersionPath}. schemaVersion/version must be an integer number or numeric string.`,
+    );
+  }
+
+  return normalizedVersion;
+}
+
+function parseExportFamily(
+  parsedSchema: Record<string, unknown>,
+  schemaVersionPath: string,
+): string {
+  const exportFamilyRaw = parsedSchema.exportFamily;
+  if (exportFamilyRaw === undefined) {
+    return SUPPORTED_PLAYBOOK_EXPORT_FAMILY;
+  }
+
+  if (
+    typeof exportFamilyRaw !== "string" ||
+    exportFamilyRaw.trim().length === 0
+  ) {
+    throw new ValidationError(
+      `Playbook schema version file is invalid: ${schemaVersionPath}. exportFamily must be a non-empty string when present.`,
+    );
+  }
+
+  if (exportFamilyRaw !== SUPPORTED_PLAYBOOK_EXPORT_FAMILY) {
+    throw new ValidationError(
+      `Unsupported Playbook export family ${exportFamilyRaw} at ${schemaVersionPath}. Expected ${SUPPORTED_PLAYBOOK_EXPORT_FAMILY}.`,
+    );
+  }
+
+  return exportFamilyRaw;
 }
 
 async function readYamlFile(filePath: string): Promise<unknown> {
@@ -126,22 +182,26 @@ export async function loadPlaybookExports(
     );
   }
 
-  if (!isRecord(parsedSchema) || typeof parsedSchema.version !== "number") {
+  if (!isRecord(parsedSchema)) {
     throw new ValidationError(
-      `Playbook schema version file is invalid: ${schemaVersionPath}. Expected {"version": <number>}.`,
+      `Playbook schema version file is invalid: ${schemaVersionPath}. Expected a JSON object.`,
     );
   }
 
-  if (parsedSchema.version !== SUPPORTED_PLAYBOOK_SCHEMA_VERSION) {
+  const schemaVersion = parseSchemaVersion(parsedSchema, schemaVersionPath);
+  if (schemaVersion !== SUPPORTED_PLAYBOOK_SCHEMA_VERSION) {
     throw new ValidationError(
-      `Unsupported Playbook schema version ${parsedSchema.version} at ${schemaVersionPath}. Supported version: ${SUPPORTED_PLAYBOOK_SCHEMA_VERSION}.`,
+      `Unsupported Playbook schema version ${schemaVersion} at ${schemaVersionPath}. Supported version: ${SUPPORTED_PLAYBOOK_SCHEMA_VERSION}.`,
     );
   }
+
+  const exportFamily = parseExportFamily(parsedSchema, schemaVersionPath);
 
   return {
     playbookPath,
     exportPath,
-    schemaVersion: parsedSchema.version,
+    schemaVersion,
+    exportFamily,
   };
 }
 
