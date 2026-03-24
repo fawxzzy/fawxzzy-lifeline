@@ -89,7 +89,7 @@ export async function resolveManifestConfig(
       .map((issue) => `- ${issue.path}: ${issue.message}`)
       .join("\n");
     throw new ValidationError(
-      `Manifest is invalid: ${options.manifestPath}\n${issueLines}`,
+      `Resolved config is incomplete or invalid: ${options.manifestPath}\n${issueLines}`,
     );
   }
 

@@ -82,13 +82,14 @@ Resolution is intentionally small and explicit:
 3. explicit manifest values always win
 
 Lifeline only merges known top-level manifest fields plus the nested `env` and `deploy` sections. It does not perform arbitrary deep-merge magic.
-Playbook archetype exports may omit `port`, `env`, and `deploy` defaults; in that case, those runtime requirements must come from explicit manifest values.
+Playbook archetype exports are sparse optional default bundles. They may omit any app-default field (`installCommand`, `buildCommand`, `startCommand`, `healthcheckPath`, `env`, `deploy`, `port`), and missing runtime requirements must then come from explicit manifest values.
 
 ## Validation and resolution behavior
 
 - `lifeline validate <manifest>` validates the raw manifest structure only.
 - `lifeline validate <manifest> --playbook-path <path>` validates the resolved config, so required runtime fields may come from Playbook defaults.
-- Lifeline does not require every optional producer section in Playbook exports. It validates the final resolved config after defaults+manifest merge.
+- Lifeline treats Playbook archetypes as optional default bundles and validates only fields that are present in those exports.
+- Lifeline enforces runnable requirements only on the final resolved config after defaults+manifest merge.
 - The runtime `port` requirement can come from either Playbook defaults or explicit manifest values.
 - `lifeline resolve <manifest>` prints the fully resolved config that Lifeline would execute.
 - `lifeline up` and `lifeline restart` use the same resolution path as `resolve`.
