@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "sessionId": "session-QzpcVXNlcn",
+  "repoRoot": "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline",
+  "activeGoal": "apply deterministic remediation plan",
+  "selectedRunId": "run-676bde8cd303",
+  "pinnedArtifacts": [
+    {
+      "artifact": ".playbook/runs/run-676bde8cd303.json",
+      "kind": "run",
+      "pinnedAt": "2026-03-25T00:08:52.637Z"
+    }
+  ],
+  "currentStep": "apply",
+  "unresolvedQuestions": [],
+  "constraints": [],
+  "evidenceEnvelope": {
+    "version": 1,
+    "session_id": "session-QzpcVXNlcn",
+    "selected_run_id": "run-676bde8cd303",
+    "cycle_id": null,
+    "generated_from_last_updated_time": "2026-03-25T00:08:52.637Z",
+    "artifacts": [
+      {
+        "path": ".playbook/cycle-history.json",
+        "kind": "cycle-history",
+        "present": false
+      },
+      {
+        "path": ".playbook/cycle-state.json",
+        "kind": "cycle-state",
+        "present": false
+      },
+      {
+        "path": ".playbook/improvement-candidates.json",
+        "kind": "proposal-candidates",
+        "present": false
+      },
+      {
+        "path": ".playbook/policy-apply-result.json",
+        "kind": "policy-apply-result",
+        "present": true
+      },
+      {
+        "path": ".playbook/policy-evaluation.json",
+        "kind": "policy-evaluation",
+        "present": false
+      },
+      {
+        "path": ".playbook/pr-review.json",
+        "kind": "pr-review",
+        "present": false
+      },
+      {
+        "path": ".playbook/runs/run-676bde8cd303.json",
+        "kind": "pinned",
+        "present": true
+      },
+      {
+        "path": ".playbook/runs/run-676bde8cd303.run.json",
+        "kind": "run",
+        "present": false
+      },
+      {
+        "path": ".playbook/session.json",
+        "kind": "session",
+        "present": true
+      }
+    ],
+    "proposal_ids": [],
+    "policy_decisions": [],
+    "execution_result": {
+      "executed": [],
+      "skipped_requires_review": [],
+      "skipped_blocked": [],
+      "failed_execution": []
+    },
+    "lineage": [
+      {
+        "order": 1,
+        "stage": "session",
+        "artifact": ".playbook/session.json",
+        "present": true
+      },
+      {
+        "order": 2,
+        "stage": "proposal_generation",
+        "artifact": ".playbook/improvement-candidates.json",
+        "present": false
+      },
+      {
+        "order": 3,
+        "stage": "policy_evaluation",
+        "artifact": ".playbook/policy-evaluation.json",
+        "present": false
+      },
+      {
+        "order": 4,
+        "stage": "pr_review",
+        "artifact": ".playbook/pr-review.json",
+        "present": false
+      },
+      {
+        "order": 5,
+        "stage": "execution_result",
+        "artifact": ".playbook/policy-apply-result.json",
+        "present": true
+      }
+    ]
+  },
+  "lastUpdatedTime": "2026-03-25T00:08:52.637Z"
+}

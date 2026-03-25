@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "cycle_id": "2026-03-24T20-28-18-092Z-f4694b60",
+  "generated_at": "2026-03-24T20:28:18.377Z",
+  "recommendation_model": "deterministic-v1",
+  "ranking_factors": [
+    "path-class-priority",
+    "safe-family-detection",
+    "current-cycle-expensive-byte-share",
+    "current-cycle-expensive-file-count",
+    "repeated-candidate-occurrence-across-cycles",
+    "repeated-expensive-path-occurrence-across-cycles",
+    "non-source-path-bias"
+  ],
+  "recommendations": [
+    {
+      "path": ".git/",
+      "rank": 1,
+      "class": "vcs-internal",
+      "rationale": "class=vcs-internal; safety=safe-default; current_cost=0 files/0 bytes; candidate_repeats=3; expensive_repeats=0",
+      "confidence": 0.99,
+      "expected_scan_impact": {
+        "estimated_files_reduced": 0,
+        "estimated_bytes_reduced": 0,
+        "impact_level": "low"
+      },
+      "safety_level": "safe-default"
+    },
+    {
+      "path": "node_modules/",
+      "rank": 2,
+      "class": "build-cache",
+      "rationale": "class=build-cache; safety=safe-default; current_cost=0 files/0 bytes; candidate_repeats=3; expensive_repeats=0",
+      "confidence": 0.99,
+      "expected_scan_impact": {
+        "estimated_files_reduced": 0,
+        "estimated_bytes_reduced": 0,
+        "impact_level": "low"
+      },
+      "safety_level": "safe-default"
+    },
+    {
+      "path": "dist/",
+      "rank": 3,
+      "class": "unknown",
+      "rationale": "class=unknown; safety=review-first; current_cost=0 files/0 bytes; candidate_repeats=3; expensive_repeats=1",
+      "confidence": 0.61,
+      "expected_scan_impact": {
+        "estimated_files_reduced": 0,
+        "estimated_bytes_reduced": 0,
+        "impact_level": "low"
+      },
+      "safety_level": "review-first"
+    }
+  ],
+  "summary": {
+    "total_recommendations": 3,
+    "safety_level_counts": {
+      "safe-default": 2,
+      "likely-safe": 0,
+      "review-first": 1
+    },
+    "class_counts": {
+      "vcs-internal": 1,
+      "build-cache": 1,
+      "generated-report": 0,
+      "temporary-file": 0,
+      "binary-asset": 0,
+      "unknown": 1
+    }
+  }
+}

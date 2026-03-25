@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-03-24T20:28:18.334Z",
+  "kind": "command-execution-quality",
+  "records": [
+    {
+      "artifacts_read": [],
+      "artifacts_written": [],
+      "command_name": "verify",
+      "confidence_score": 0.9,
+      "downstream_artifacts_produced": [],
+      "duration_ms": 233,
+      "inputs_summary": "policy=off; phase=full; rules=all",
+      "open_questions_count": 0,
+      "recorded_at": "2026-03-24T20:28:18.334Z",
+      "run_id": "verify-1774384098101",
+      "success_status": "success",
+      "warnings_count": 0
+    }
+  ],
+  "schemaVersion": "1.0",
+  "summary": {
+    "average_confidence_score": 0.9,
+    "average_duration_ms": 233,
+    "failure_runs": 0,
+    "partial_runs": 0,
+    "success_runs": 1,
+    "total_open_questions": 0,
+    "total_runs": 1,
+    "total_warnings": 0
+  }
+}

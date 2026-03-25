@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-doctrine-candidates",
+  "generatedAt": "2026-03-25T04:35:21.909Z",
+  "promotionCriteria": {
+    "strength": 0.85,
+    "evidence_refs": 3,
+    "instances": 3,
+    "outcome_confidence": 0.6
+  },
+  "reviewOnly": true,
+  "candidates": []
+}

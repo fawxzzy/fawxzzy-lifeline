@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0",
+  "entries": [
+    {
+      "cycle_id": "2026-03-24T20-02-48-917Z-ca444211",
+      "observed_at": "2026-03-24T20:02:48.941Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1983,
+      "blind_spot_ratio": 0.8017
+    },
+    {
+      "cycle_id": "2026-03-24T20-02-49-624Z-b4c2e4ed",
+      "observed_at": "2026-03-24T20:02:49.660Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1704,
+      "blind_spot_ratio": 0.8296
+    },
+    {
+      "cycle_id": "2026-03-24T20-12-09-922Z-867737e8",
+      "observed_at": "2026-03-24T20:12:10.746Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1586,
+      "blind_spot_ratio": 0.8414
+    },
+    {
+      "cycle_id": "2026-03-24T20-28-18-092Z-f4694b60",
+      "observed_at": "2026-03-24T20:28:18.343Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1474,
+      "blind_spot_ratio": 0.8526
+    },
+    {
+      "cycle_id": "2026-03-24T20-28-19-045Z-e61099ff",
+      "observed_at": "2026-03-24T20:28:19.630Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1411,
+      "blind_spot_ratio": 0.8589
+    },
+    {
+      "cycle_id": "2026-03-24T20-40-43-006Z-324a1719",
+      "observed_at": "2026-03-24T20:40:43.583Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1353,
+      "blind_spot_ratio": 0.8647
+    },
+    {
+      "cycle_id": "2026-03-24T20-40-48-910Z-aa6497a3",
+      "observed_at": "2026-03-24T20:40:49.762Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1299,
+      "blind_spot_ratio": 0.8701
+    },
+    {
+      "cycle_id": "2026-03-25T00-08-50-808Z-3b8cd1d8",
+      "observed_at": "2026-03-25T00:08:51.366Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1243,
+      "blind_spot_ratio": 0.8757
+    },
+    {
+      "cycle_id": "2026-03-25T00-08-52-072Z-2446688b",
+      "observed_at": "2026-03-25T00:08:52.642Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1192,
+      "blind_spot_ratio": 0.8808
+    },
+    {
+      "cycle_id": "2026-03-25T00-08-53-351Z-713772c9",
+      "observed_at": "2026-03-25T00:08:54.238Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.115,
+      "blind_spot_ratio": 0.885
+    },
+    {
+      "cycle_id": "2026-03-25T04-35-20-930Z-0c3e0be8",
+      "observed_at": "2026-03-25T04:35:21.917Z",
+      "eligible_scan_coverage_score": 1,
+      "repo_visibility_score": 0.1111,
+      "blind_spot_ratio": 0.8889
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0",
+  "command": "pattern-compaction",
+  "patterns": [
+    {
+      "id": "ARCHITECTURE_MODULAR_MONOLITH",
+      "bucket": "architecture",
+      "occurrences": 1,
+      "examples": [
+        "repository architecture: modular-monolith"
+      ]
+    },
+    {
+      "id": "MODULE_DEPENDENCY_COMMANDS_DEPENDS_ON_CONTRACTS",
+      "bucket": "dependency",
+      "occurrences": 1,
+      "examples": [
+        "commands -> contracts"
+      ]
+    },
+    {
+      "id": "MODULE_DEPENDENCY_COMMANDS_DEPENDS_ON_CORE",
+      "bucket": "dependency",
+      "occurrences": 1,
+      "examples": [
+        "commands -> core"
+      ]
+    },
+    {
+      "id": "MODULE_DEPENDENCY_CORE_DEPENDS_ON_CONTRACTS",
+      "bucket": "dependency",
+      "occurrences": 1,
+      "examples": [
+        "core -> contracts"
+      ]
+    }
+  ]
+}

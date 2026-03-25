@@ -1,0 +1,27 @@
+{
+  "artifacts_read": [],
+  "artifacts_written": [],
+  "command_name": "verify",
+  "duration_ms": 233,
+  "event_id": "20260324202818-command_execution-33ce3273ed36",
+  "event_type": "command_execution",
+  "payload": {
+    "artifacts_read": [],
+    "artifacts_written": [],
+    "command_name": "verify",
+    "duration_ms": 233,
+    "success_status": "success"
+  },
+  "related_artifacts": [
+    {
+      "kind": "command_quality",
+      "path": ".playbook/telemetry/command-quality.json"
+    }
+  ],
+  "run_id": "verify-1774384098101",
+  "schemaVersion": "1.0",
+  "subject": "verify",
+  "subsystem": "repository_memory",
+  "success_status": "success",
+  "timestamp": "2026-03-24T20:28:18.336Z"
+}

@@ -1,0 +1,34 @@
+{
+  "eventFingerprint": {
+    "dimensions": [
+      "command:verify"
+    ],
+    "fingerprintVersion": "1",
+    "value": "evtfp_37291af3"
+  },
+  "eventInstanceId": "evt_e72d0d0a",
+  "eventType": "verify.findings.summary.v1",
+  "evidence": [
+    {
+      "artifactPath": ".playbook/findings.json",
+      "capturedAt": 1774397334231,
+      "kind": "session-evidence-reference",
+      "schemaVersion": "1.0.0",
+      "sessionId": "repo-local",
+      "stepId": "verify-summary"
+    }
+  ],
+  "kind": "memory-event",
+  "occurredAt": 1774397334231,
+  "repoId": "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline",
+  "salience": {
+    "reasonCodes": [
+      "verify-summary"
+    ],
+    "score": 0.5,
+    "scoredAt": 1774397334231,
+    "scoreVersion": "1"
+  },
+  "schemaVersion": "1.0.0",
+  "summary": "verify completed without failures"
+}

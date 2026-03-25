@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0",
+  "commands": {
+    "apply": {
+      "runs": 2,
+      "successes": 2,
+      "failures": 0,
+      "totalDurationMs": 1145,
+      "averageDurationMs": 572.5,
+      "lastRunAt": "2026-03-25T00:08:52.642Z"
+    },
+    "index": {
+      "runs": 1,
+      "successes": 1,
+      "failures": 0,
+      "totalDurationMs": 36,
+      "averageDurationMs": 36,
+      "lastRunAt": "2026-03-24T20:02:49.660Z"
+    },
+    "init": {
+      "runs": 1,
+      "successes": 1,
+      "failures": 0,
+      "totalDurationMs": 23,
+      "averageDurationMs": 23,
+      "lastRunAt": "2026-03-24T20:02:48.940Z"
+    },
+    "plan": {
+      "runs": 2,
+      "successes": 2,
+      "failures": 0,
+      "totalDurationMs": 1142,
+      "averageDurationMs": 571,
+      "lastRunAt": "2026-03-25T00:08:51.366Z"
+    },
+    "status": {
+      "runs": 4,
+      "successes": 4,
+      "failures": 0,
+      "totalDurationMs": 3546,
+      "averageDurationMs": 886.5,
+      "lastRunAt": "2026-03-25T04:35:21.917Z"
+    },
+    "verify": {
+      "runs": 1,
+      "successes": 1,
+      "failures": 0,
+      "totalDurationMs": 250,
+      "averageDurationMs": 250,
+      "lastRunAt": "2026-03-24T20:28:18.343Z"
+    }
+  }
+}

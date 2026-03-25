@@ -1,0 +1,42 @@
+{
+  "eventFingerprint": {
+    "dimensions": [
+      "command:plan"
+    ],
+    "fingerprintVersion": "1",
+    "value": "evtfp_4cbb2f58"
+  },
+  "eventInstanceId": "evt_076546b3",
+  "eventType": "plan.generation.summary.v1",
+  "evidence": [
+    {
+      "artifactPath": ".playbook/findings.json",
+      "capturedAt": 1774384843572,
+      "kind": "session-evidence-reference",
+      "schemaVersion": "1.0.0",
+      "sessionId": "repo-local",
+      "stepId": "plan-summary"
+    },
+    {
+      "artifactPath": ".playbook/plan.json",
+      "capturedAt": 1774384843572,
+      "kind": "session-evidence-reference",
+      "schemaVersion": "1.0.0",
+      "sessionId": "repo-local",
+      "stepId": "plan-summary"
+    }
+  ],
+  "kind": "memory-event",
+  "occurredAt": 1774384843572,
+  "repoId": "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline",
+  "salience": {
+    "reasonCodes": [
+      "plan-summary"
+    ],
+    "score": 0.5,
+    "scoredAt": 1774384843572,
+    "scoreVersion": "1"
+  },
+  "schemaVersion": "1.0.0",
+  "summary": "plan generation completed"
+}

@@ -1,0 +1,285 @@
+{
+  "schemaVersion": "1.0",
+  "cycle_id": "2026-03-25T04-35-20-930Z-0c3e0be8",
+  "observed_at": "2026-03-25T04:35:21.917Z",
+  "total_files_seen": 207,
+  "eligible_files": 23,
+  "scanned_files": 23,
+  "skipped_files": 0,
+  "oversized_files": 0,
+  "ignored_files": 103,
+  "unsupported_files": 81,
+  "binary_files": 0,
+  "parse_failures": 0,
+  "parse_failed_files": 0,
+  "unresolved_imports": 46,
+  "detected_modules": 4,
+  "unknown_areas": [
+    "unsupported-file-types",
+    "unresolved-imports",
+    "classified-low-value-paths"
+  ],
+  "eligible_scan_coverage_score": 1,
+  "repo_visibility_score": 0.1111,
+  "blind_spot_ratio": 0.8889,
+  "coverage_formulas": {
+    "eligible_scan_coverage_score": "eligible_scan_coverage_score = scanned_files / eligible_files (eligible_files defaults to 1 when empty)",
+    "repo_visibility_score": "repo_visibility_score = (total_files_seen - blind_spot_files) / total_files_seen (total_files_seen defaults to 1 when empty)",
+    "blind_spot_ratio": "blind_spot_ratio = blind_spot_files / total_files_seen (total_files_seen defaults to 1 when empty)"
+  },
+  "score_components": {
+    "numerator_scanned_files": 23,
+    "denominator_eligible_files": 23,
+    "numerator_visible_files": 23,
+    "denominator_total_files_seen": 207,
+    "numerator_blind_spot_files": 184,
+    "denominator_total_files_seen_for_blind_spot": 207
+  },
+  "observations": {
+    "file_inventory": {
+      "total_files_seen": 207,
+      "sampled_file_hashes": [
+        {
+          "path": ".editorconfig",
+          "sha256": "6420f9200eed1dd2ba0e3f25c298abce9fa6cace7f929a101af6de090e203560"
+        },
+        {
+          "path": ".github/dependabot.yml",
+          "sha256": "250d8c94842d836ab78c27df2eb2fbd68c1a65b6330b029be741fdc2ac78f7eb"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "sha256": "17e215359ebd85a8168b252d9cb6a9ae59935ab0e40142933d53701b17bc9c13"
+        },
+        {
+          "path": ".github/workflows/playbook-ci.yml",
+          "sha256": "85aac5410237383d4fd1f0655c87e7e25c1159011007eadd5e492100e909cd6d"
+        },
+        {
+          "path": ".github/workflows/playbook-verify.yml",
+          "sha256": "55598502e825e4852766a7abe32fcf8cc8d3a4b71ad4b60c6394cb8eef7a7fbc"
+        }
+      ],
+      "max_scan_bytes": 1000000,
+      "expensive_paths": [
+        {
+          "path": ".playbook/runtime/cycles/2026-03-24T20-28-19-045Z-e61099ff/coverage.json",
+          "size_bytes": 9025
+        },
+        {
+          "path": ".playbook/runtime/cycles/2026-03-24T20-40-43-006Z-324a1719/coverage.json",
+          "size_bytes": 9025
+        },
+        {
+          "path": ".playbook/runtime/cycles/2026-03-24T20-40-48-910Z-aa6497a3/coverage.json",
+          "size_bytes": 9025
+        },
+        {
+          "path": ".playbook/runtime/cycles/2026-03-25T00-08-50-808Z-3b8cd1d8/coverage.json",
+          "size_bytes": 9025
+        },
+        {
+          "path": ".playbook/runtime/cycles/2026-03-25T00-08-52-072Z-2446688b/coverage.json",
+          "size_bytes": 9025
+        }
+      ],
+      "path_class_counts": {
+        "vcs-internal": 0,
+        "build-cache": 57,
+        "generated-report": 0,
+        "temporary-file": 0,
+        "binary-asset": 0,
+        "unknown": 150
+      },
+      "pruned_directories": [
+        {
+          "path": ".git",
+          "path_class": "vcs-internal",
+          "reason": "vcs-internal-directory"
+        },
+        {
+          "path": "node_modules",
+          "path_class": "build-cache",
+          "reason": "dependency-cache-directory"
+        }
+      ],
+      "low_value_path_samples": [
+        {
+          "path": ".editorconfig",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".github/dependabot.yml",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".github/workflows/ci.yml",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".github/workflows/playbook-ci.yml",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".github/workflows/playbook-verify.yml",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".gitignore",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".gitkeep",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".lifeline/logs/playbook.log",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".lifeline/state.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".nvmrc",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/compaction/buckets.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/compaction/candidates.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/compaction/review-drafts.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/context/modules/commands.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/context/modules/contracts.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/context/modules/core.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/context/modules/types.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/doctrine-candidates.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/managed-surfaces.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/memory/events/20260324202818-command_execution-33ce3273ed36.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/memory/events/20260324202818-command_quality-eb1d2db1bbd3.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/memory/events/runtime/evt_0532346f.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/memory/events/runtime/evt_05900d81.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/memory/events/runtime/evt_076546b3.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        },
+        {
+          "path": ".playbook/memory/events/runtime/evt_0b70130d.json",
+          "path_class": "unknown",
+          "handling": "unsupported",
+          "reason": "unsupported-extension"
+        }
+      ],
+      "ignore_candidate_paths": [
+        ".git/",
+        "dist/",
+        "node_modules/"
+      ],
+      "expensive_path_classes": [
+        {
+          "path_class": "unknown",
+          "total_size_bytes": 304867,
+          "file_count": 150
+        },
+        {
+          "path_class": "build-cache",
+          "total_size_bytes": 98010,
+          "file_count": 57
+        }
+      ]
+    },
+    "dependency_scan": {
+      "unresolved_relative_imports": 46
+    }
+  },
+  "interpretations": {
+    "framework_inference": "node",
+    "architecture_inference": "modular-monolith",
+    "coverage_confidence": "low"
+  }
+}

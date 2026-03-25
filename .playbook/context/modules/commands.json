@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-module-context-digest",
+  "generatedAt": "2026-03-24T20:02:49.639Z",
+  "module": {
+    "name": "commands",
+    "path": "src/commands",
+    "type": "module"
+  },
+  "files": {
+    "count": 7,
+    "representative": [
+      "src/commands/down.ts",
+      "src/commands/logs.ts",
+      "src/commands/resolve.ts",
+      "src/commands/restart.ts",
+      "src/commands/status.ts"
+    ]
+  },
+  "dependencies": [
+    "contracts",
+    "core"
+  ],
+  "directDependents": [],
+  "dependents": [],
+  "rules": [
+    "protected-doc.governance",
+    "release.version-governance",
+    "requireNotesFileWhenGovernanceExists",
+    "requireNotesOnChanges",
+    "verify.rule.tests.required"
+  ],
+  "docs": [
+    "docs/architecture.md",
+    "docs/contracts/app-manifest.md",
+    "docs/scope.md"
+  ],
+  "tests": [],
+  "risk": {
+    "level": "low",
+    "score": 0,
+    "signals": [
+      "Low fan-in and limited transitive impact",
+      "warning: Verify failure signal unavailable; no .playbook/verify-report.json, .playbook/verify.json, .playbook/findings.json, or .playbook/plan.json verify payload found."
+    ]
+  },
+  "graphNeighborhood": {
+    "nodeId": "module:commands",
+    "outgoingKinds": [
+      "depends_on",
+      "governed_by"
+    ],
+    "incomingKinds": [
+      "contains"
+    ]
+  },
+  "provenance": {
+    "indexArtifact": ".playbook/repo-index.json",
+    "graphArtifact": ".playbook/repo-graph.json"
+  }
+}
