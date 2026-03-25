@@ -24,5 +24,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm build
+
       # Canonical Playbook verification path in this repo: resolve+merge smoke checks.
       - run: pnpm smoke:playbook

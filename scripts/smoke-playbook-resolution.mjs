@@ -4,7 +4,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 
-const cli = ["node", "dist/cli.js"];
+const cli = process.platform === "win32"
+  ? ["pnpm.cmd", "lifeline"]
+  : ["pnpm", "lifeline"];
 const fixturePlaybookPath = "fixtures/playbook-export";
 const manifestPath =
   "fixtures/runtime-smoke-app/runtime-smoke-app.playbook.lifeline.yml";
