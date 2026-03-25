@@ -1,0 +1,15 @@
+{
+  "executed": [],
+  "failed_execution": [],
+  "kind": "policy-apply-result",
+  "schemaVersion": "1.0",
+  "skipped_blocked": [],
+  "skipped_requires_review": [],
+  "summary": {
+    "executed": 0,
+    "failed_execution": 0,
+    "skipped_blocked": 0,
+    "skipped_requires_review": 0,
+    "total": 0
+  }
+}

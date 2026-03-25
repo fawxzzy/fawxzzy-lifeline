@@ -1,0 +1,139 @@
+{
+  "architecture": "modular-monolith",
+  "configs": [
+    {
+      "name": "eslint",
+      "path": ".eslintrc.js",
+      "present": false
+    },
+    {
+      "name": "eslint",
+      "path": ".eslintrc.cjs",
+      "present": false
+    },
+    {
+      "name": "eslint",
+      "path": ".eslintrc.json",
+      "present": false
+    },
+    {
+      "name": "eslint",
+      "path": "eslint.config.js",
+      "present": false
+    },
+    {
+      "name": "eslint",
+      "path": "eslint.config.mjs",
+      "present": false
+    },
+    {
+      "name": "tsconfig",
+      "path": "tsconfig.json",
+      "present": true
+    },
+    {
+      "name": "jest",
+      "path": "jest.config.js",
+      "present": false
+    },
+    {
+      "name": "jest",
+      "path": "jest.config.cjs",
+      "present": false
+    },
+    {
+      "name": "jest",
+      "path": "jest.config.ts",
+      "present": false
+    },
+    {
+      "name": "vitest",
+      "path": "vitest.config.ts",
+      "present": false
+    },
+    {
+      "name": "vitest",
+      "path": "vitest.config.js",
+      "present": false
+    },
+    {
+      "name": "vitest",
+      "path": "vitest.workspace.ts",
+      "present": false
+    },
+    {
+      "commands": [
+        "build",
+        "check",
+        "format",
+        "lifeline",
+        "smoke:playbook",
+        "smoke:runtime",
+        "typecheck",
+        "validate:fitness",
+        "validate:playbook"
+      ],
+      "name": "command-inventory",
+      "path": "package.json#scripts",
+      "present": true
+    }
+  ],
+  "database": "none",
+  "dependencies": [],
+  "framework": "node",
+  "language": "typescript",
+  "modules": [
+    {
+      "dependencies": [
+        "contracts",
+        "core"
+      ],
+      "name": "commands"
+    },
+    {
+      "dependencies": [],
+      "name": "contracts"
+    },
+    {
+      "dependencies": [
+        "contracts"
+      ],
+      "name": "core"
+    },
+    {
+      "dependencies": [],
+      "name": "types"
+    }
+  ],
+  "rules": [
+    "protected-doc.governance",
+    "release.version-governance",
+    "requireNotesFileWhenGovernanceExists",
+    "requireNotesOnChanges",
+    "verify.rule.tests.required"
+  ],
+  "schemaVersion": "1.0",
+  "tests": [
+    {
+      "coverage_estimate": "unknown",
+      "module": "commands",
+      "tests_present": false
+    },
+    {
+      "coverage_estimate": "unknown",
+      "module": "contracts",
+      "tests_present": false
+    },
+    {
+      "coverage_estimate": "unknown",
+      "module": "core",
+      "tests_present": false
+    },
+    {
+      "coverage_estimate": "unknown",
+      "module": "types",
+      "tests_present": false
+    }
+  ],
+  "workspace": []
+}

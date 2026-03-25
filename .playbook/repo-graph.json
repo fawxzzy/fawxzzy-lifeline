@@ -1,0 +1,233 @@
+{
+  "edges": [
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "module:commands"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "module:contracts"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "module:core"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "module:types"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "rule:protected-doc.governance"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "rule:release.version-governance"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "rule:requireNotesFileWhenGovernanceExists"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "rule:requireNotesOnChanges"
+    },
+    {
+      "from": "repository:root",
+      "kind": "contains",
+      "to": "rule:verify.rule.tests.required"
+    },
+    {
+      "from": "module:commands",
+      "kind": "depends_on",
+      "to": "module:contracts"
+    },
+    {
+      "from": "module:commands",
+      "kind": "depends_on",
+      "to": "module:core"
+    },
+    {
+      "from": "module:core",
+      "kind": "depends_on",
+      "to": "module:contracts"
+    },
+    {
+      "from": "module:commands",
+      "kind": "governed_by",
+      "to": "rule:protected-doc.governance"
+    },
+    {
+      "from": "module:commands",
+      "kind": "governed_by",
+      "to": "rule:release.version-governance"
+    },
+    {
+      "from": "module:commands",
+      "kind": "governed_by",
+      "to": "rule:requireNotesFileWhenGovernanceExists"
+    },
+    {
+      "from": "module:commands",
+      "kind": "governed_by",
+      "to": "rule:requireNotesOnChanges"
+    },
+    {
+      "from": "module:commands",
+      "kind": "governed_by",
+      "to": "rule:verify.rule.tests.required"
+    },
+    {
+      "from": "module:contracts",
+      "kind": "governed_by",
+      "to": "rule:protected-doc.governance"
+    },
+    {
+      "from": "module:contracts",
+      "kind": "governed_by",
+      "to": "rule:release.version-governance"
+    },
+    {
+      "from": "module:contracts",
+      "kind": "governed_by",
+      "to": "rule:requireNotesFileWhenGovernanceExists"
+    },
+    {
+      "from": "module:contracts",
+      "kind": "governed_by",
+      "to": "rule:requireNotesOnChanges"
+    },
+    {
+      "from": "module:contracts",
+      "kind": "governed_by",
+      "to": "rule:verify.rule.tests.required"
+    },
+    {
+      "from": "module:core",
+      "kind": "governed_by",
+      "to": "rule:protected-doc.governance"
+    },
+    {
+      "from": "module:core",
+      "kind": "governed_by",
+      "to": "rule:release.version-governance"
+    },
+    {
+      "from": "module:core",
+      "kind": "governed_by",
+      "to": "rule:requireNotesFileWhenGovernanceExists"
+    },
+    {
+      "from": "module:core",
+      "kind": "governed_by",
+      "to": "rule:requireNotesOnChanges"
+    },
+    {
+      "from": "module:core",
+      "kind": "governed_by",
+      "to": "rule:verify.rule.tests.required"
+    },
+    {
+      "from": "module:types",
+      "kind": "governed_by",
+      "to": "rule:protected-doc.governance"
+    },
+    {
+      "from": "module:types",
+      "kind": "governed_by",
+      "to": "rule:release.version-governance"
+    },
+    {
+      "from": "module:types",
+      "kind": "governed_by",
+      "to": "rule:requireNotesFileWhenGovernanceExists"
+    },
+    {
+      "from": "module:types",
+      "kind": "governed_by",
+      "to": "rule:requireNotesOnChanges"
+    },
+    {
+      "from": "module:types",
+      "kind": "governed_by",
+      "to": "rule:verify.rule.tests.required"
+    }
+  ],
+  "generatedAt": "2026-03-24T20:02:49.635Z",
+  "kind": "playbook-repo-graph",
+  "nodes": [
+    {
+      "id": "module:commands",
+      "kind": "module",
+      "name": "commands"
+    },
+    {
+      "id": "module:contracts",
+      "kind": "module",
+      "name": "contracts"
+    },
+    {
+      "id": "module:core",
+      "kind": "module",
+      "name": "core"
+    },
+    {
+      "id": "module:types",
+      "kind": "module",
+      "name": "types"
+    },
+    {
+      "id": "repository:root",
+      "kind": "repository",
+      "name": "root"
+    },
+    {
+      "id": "rule:protected-doc.governance",
+      "kind": "rule",
+      "name": "protected-doc.governance"
+    },
+    {
+      "id": "rule:release.version-governance",
+      "kind": "rule",
+      "name": "release.version-governance"
+    },
+    {
+      "id": "rule:requireNotesFileWhenGovernanceExists",
+      "kind": "rule",
+      "name": "requireNotesFileWhenGovernanceExists"
+    },
+    {
+      "id": "rule:requireNotesOnChanges",
+      "kind": "rule",
+      "name": "requireNotesOnChanges"
+    },
+    {
+      "id": "rule:verify.rule.tests.required",
+      "kind": "rule",
+      "name": "verify.rule.tests.required"
+    }
+  ],
+  "schemaVersion": "1.1",
+  "stats": {
+    "edgeCount": 32,
+    "edgeKinds": {
+      "contains": 9,
+      "depends_on": 3,
+      "governed_by": 20
+    },
+    "nodeCount": 10,
+    "nodeKinds": {
+      "module": 4,
+      "repository": 1,
+      "rule": 5
+    }
+  }
+}

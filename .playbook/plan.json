@@ -1,0 +1,24 @@
+{
+  "command": "plan",
+  "exitCode": 0,
+  "ok": true,
+  "remediation": {
+    "reason": "No verify failures were detected.",
+    "status": "not_needed",
+    "totalSteps": 0,
+    "unresolvedFailures": 0
+  },
+  "schemaVersion": "1.0",
+  "tasks": [],
+  "verify": {
+    "failures": [],
+    "ok": true,
+    "summary": {
+      "baseRef": "origin/main",
+      "baseSha": "ad59beb40239e20b19ead14bd5a7dbddcc8e26ad",
+      "failures": 0,
+      "warnings": 0
+    },
+    "warnings": []
+  }
+}
