@@ -6,9 +6,12 @@ Lifeline v1 is the smallest useful version of a self-hosted app operator for one
 
 Lifeline v1 includes:
 
+- supervisor-backed local app lifecycle for one machine
+- restart-on-failure with bounded backoff and crash-loop detection
+- persisted runtime metadata for deterministic restore
 - manifest-driven app definitions
 - CLI validation for those manifests
-- local runtime commands: `up`, `down`, `status`, `logs`, `restart`
+- local runtime commands: `up`, `down`, `status`, `logs`, `restart`, `restore`
 - support for the `next-web` and `node-web` archetypes
 - example manifests for the fitness app and Playbook UI
 - an in-repo fixture app used for runtime smoke verification
@@ -40,3 +43,8 @@ The fastest path to a fragile system is mixing deployment ideas, control-plane a
 ## Early targets
 
 The fitness app and Playbook UI remain the initial targets because they exercise the same model in slightly different ways without requiring product-specific runtime logic. Their manifests are examples and early target contracts. Actually running them requires each user to provide a valid local `deploy.workingDirectory` on their own machine.
+
+
+## Wave sequencing
+
+Wave 1 covers supervisor lifecycle + restore. OS startup registration (boot/login auto-start wiring) is explicitly out of scope until Wave 2.

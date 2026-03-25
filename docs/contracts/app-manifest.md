@@ -29,6 +29,9 @@ env:
 deploy:
   strategy: rebuild
   workingDirectory: /srv/fitness-app
+runtime:
+  restartPolicy: on-failure
+  restorable: true
 ```
 
 ## Slimmer manifest shape with Playbook defaults
@@ -63,6 +66,8 @@ This manifest is not valid on its own for manifest-only runtime execution. It be
 - `env.requiredKeys`: optional list of required environment variable keys after env-file values and shell env are merged. If omitted, Lifeline normalizes it to `[]`.
 - `deploy.strategy`: deployment strategy label. v1 supports `rebuild` and `restart`.
 - `deploy.workingDirectory`: machine-local directory used by runtime flows. Relative paths resolve from the manifest file location.
+- `runtime.restartPolicy`: restart behavior for supervised runtime. Supported values: `on-failure` (default) and `never`.
+- `runtime.restorable`: whether `lifeline restore` should relaunch this app from state. Defaults to `true`.
 
 ## Resolution behavior
 
@@ -86,7 +91,7 @@ Merge precedence:
 1. Playbook archetype defaults
 2. overridden by explicit manifest values
 
-The merge is intentionally small and predictable. Lifeline merges known manifest fields plus the nested `env` and `deploy` sections only.
+The merge is intentionally small and predictable. Lifeline merges known manifest fields plus the nested `env`, `deploy`, and `runtime` sections only.
 Playbook archetype exports are sparse optional default bundles. They may omit any app-default field (`installCommand`, `buildCommand`, `startCommand`, `healthcheckPath`, `env`, `deploy`, `port`), and runtime requirements can come from either Playbook defaults or explicit manifest values.
 
 ## Validation vs runtime requirements

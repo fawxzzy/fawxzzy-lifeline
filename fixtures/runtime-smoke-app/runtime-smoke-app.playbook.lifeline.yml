@@ -2,10 +2,14 @@ name: runtime-smoke-app
 archetype: node-web
 repo: local-fixture
 branch: main
-port: 4310
+port: 4387
 env:
   mode: file
   file: .env.runtime
 deploy:
   strategy: rebuild
   workingDirectory: .
+
+runtime:
+  restartPolicy: on-failure
+  restorable: true

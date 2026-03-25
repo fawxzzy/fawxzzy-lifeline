@@ -5,7 +5,7 @@ branch: main
 installCommand: node -e "console.log('install ok')"
 buildCommand: node -e "console.log('build ok')"
 startCommand: node server.js
-port: 4310
+port: 6062
 healthcheckPath: /healthz
 env:
   mode: file
@@ -16,3 +16,7 @@ env:
 deploy:
   strategy: rebuild
   workingDirectory: .
+
+runtime:
+  restartPolicy: on-failure
+  restorable: true

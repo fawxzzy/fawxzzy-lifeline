@@ -3,14 +3,16 @@ import { runDownCommand } from "./commands/down.js";
 import { runLogsCommand } from "./commands/logs.js";
 import { runResolveCommand } from "./commands/resolve.js";
 import { runRestartCommand } from "./commands/restart.js";
+import { runRestoreCommand } from "./commands/restore.js";
 import { runStatusCommand } from "./commands/status.js";
 import { runUpCommand } from "./commands/up.js";
 import { runValidateCommand } from "./commands/validate.js";
 import { LifelineError } from "./core/errors.js";
+import { runSupervisor } from "./core/supervisor.js";
 
 function printUsage(): void {
   console.log(
-    "Lifeline v1\n\nUsage:\n  lifeline validate <manifest-path> [--playbook-path <path>]\n  lifeline resolve <manifest-path> [--playbook-path <path>]\n  lifeline up <manifest-path> [--playbook-path <path>]\n  lifeline down <app-name>\n  lifeline status <app-name>\n  lifeline logs <app-name> [line-count]\n  lifeline restart <app-name> [--playbook-path <path>]",
+    "Lifeline v1\n\nUsage:\n  lifeline validate <manifest-path> [--playbook-path <path>]\n  lifeline resolve <manifest-path> [--playbook-path <path>]\n  lifeline up <manifest-path> [--playbook-path <path>]\n  lifeline down <app-name>\n  lifeline status <app-name>\n  lifeline logs <app-name> [line-count]\n  lifeline restart <app-name> [--playbook-path <path>]\n  lifeline restore",
   );
 }
 
@@ -115,6 +117,14 @@ async function main(argv: string[]): Promise<number> {
         return 1;
       }
       return runRestartCommand(target, playbookPath);
+    case "restore":
+      return runRestoreCommand();
+    case "supervise":
+      if (!target) {
+        console.error("Missing app name.");
+        return 1;
+      }
+      return runSupervisor(target);
     default:
       console.error(`Unknown command: ${command}`);
       printUsage();

@@ -1,5 +1,5 @@
-import { stopProcess } from "../core/process-manager.js";
-import { getAppState, removeAppState } from "../core/state-store.js";
+import { isProcessAlive, stopProcess } from "../core/process-manager.js";
+import { getAppState, upsertAppState } from "../core/state-store.js";
 
 export async function runDownCommand(appName: string): Promise<number> {
   const state = await getAppState(appName);
@@ -8,8 +8,17 @@ export async function runDownCommand(appName: string): Promise<number> {
     return 1;
   }
 
-  await stopProcess(state.pid);
-  await removeAppState(appName);
+  if (state.childPid && (await isProcessAlive(state.childPid))) {
+    await stopProcess(state.childPid);
+  }
+
+  await stopProcess(state.supervisorPid);
+  await upsertAppState({
+    ...state,
+    childPid: undefined,
+    lastKnownStatus: "stopped",
+    lastExitAt: new Date().toISOString(),
+  });
   console.log(`App ${appName} has been stopped.`);
   return 0;
 }

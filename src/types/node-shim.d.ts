@@ -26,6 +26,16 @@ declare module "node:fs/promises" {
   }>;
 }
 
+declare module "node:fs" {
+  export function createWriteStream(
+    path: string,
+    options?: { flags?: string },
+  ): {
+    write(chunk: string): void;
+    end(): void;
+  };
+}
+
 declare module "node:path" {
   const path: {
     resolve: (...paths: string[]) => string;
@@ -80,6 +90,9 @@ declare const process: {
   cwd(): string;
   exitCode?: number;
   platform: string;
+  pid: number;
+  execPath: string;
+  on(event: "SIGTERM" | "SIGINT", handler: () => void): void;
   kill(pid: number, signal?: number | string): void;
 };
 
