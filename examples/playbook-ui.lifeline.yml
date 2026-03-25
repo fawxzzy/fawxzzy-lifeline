@@ -16,3 +16,7 @@ env:
 deploy:
   strategy: rebuild
   workingDirectory: /srv/playbook-ui
+
+runtime:
+  restartPolicy: on-failure
+  restorable: true

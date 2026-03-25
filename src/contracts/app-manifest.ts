@@ -1,10 +1,12 @@
 export const SUPPORTED_ARCHETYPES = ["next-web", "node-web"] as const;
 export const SUPPORTED_ENV_MODES = ["inline", "file"] as const;
 export const SUPPORTED_DEPLOY_STRATEGIES = ["rebuild", "restart"] as const;
+export const SUPPORTED_RESTART_POLICIES = ["on-failure", "never"] as const;
 
 export type AppArchetype = (typeof SUPPORTED_ARCHETYPES)[number];
 export type EnvMode = (typeof SUPPORTED_ENV_MODES)[number];
 export type DeployStrategy = (typeof SUPPORTED_DEPLOY_STRATEGIES)[number];
+export type RestartPolicy = (typeof SUPPORTED_RESTART_POLICIES)[number];
 
 export interface AppManifest {
   name: string;
@@ -26,13 +28,20 @@ export interface AppManifest {
     strategy: DeployStrategy;
     workingDirectory?: string;
   };
+  runtime: {
+    restartPolicy: RestartPolicy;
+    restorable: boolean;
+  };
 }
 
-export type AppManifestInput = Partial<Omit<AppManifest, "env" | "deploy">> & {
+export type AppManifestInput = Partial<
+  Omit<AppManifest, "env" | "deploy" | "runtime">
+> & {
   env?: Partial<AppManifest["env"]> & {
     required?: string[];
   };
   deploy?: Partial<AppManifest["deploy"]>;
+  runtime?: Partial<AppManifest["runtime"]>;
 };
 
 export interface ValidationIssue {
@@ -224,6 +233,50 @@ function validateManifestLike(
     }
   }
 
+  const runtimeValue = value.runtime;
+  let runtime: AppManifest["runtime"] | undefined;
+  if (runtimeValue === undefined) {
+    if (options.requireRunnableFields) {
+      runtime = { restartPolicy: "on-failure", restorable: true };
+    }
+  } else if (!isRecord(runtimeValue)) {
+    issues.push({ path: "runtime", message: "must be an object" });
+  } else {
+    const restartPolicy = runtimeValue.restartPolicy;
+    if (
+      restartPolicy !== undefined &&
+      !SUPPORTED_RESTART_POLICIES.includes(restartPolicy as RestartPolicy)
+    ) {
+      issues.push({
+        path: "runtime.restartPolicy",
+        message: `must be one of: ${SUPPORTED_RESTART_POLICIES.join(", ")}`,
+      });
+    }
+
+    const restorableRaw = runtimeValue.restorable;
+    const restorable =
+      typeof restorableRaw === "boolean"
+        ? restorableRaw
+        : restorableRaw === "true"
+          ? true
+          : restorableRaw === "false"
+            ? false
+            : undefined;
+
+    if (restorableRaw !== undefined && restorable === undefined) {
+      issues.push({
+        path: "runtime.restorable",
+        message: "must be a boolean",
+      });
+    }
+
+    runtime = {
+      restartPolicy:
+        (restartPolicy as RestartPolicy | undefined) ?? "on-failure",
+      restorable: restorable ?? true,
+    };
+  }
+
   if (
     issues.length > 0 ||
     !name ||
@@ -236,6 +289,7 @@ function validateManifestLike(
     !healthcheckPath ||
     !env ||
     !deploy ||
+    !runtime ||
     value.port === undefined
   ) {
     return { issues };
@@ -255,6 +309,7 @@ function validateManifestLike(
       healthcheckPath,
       env,
       deploy,
+      runtime,
     },
     issues,
   };
@@ -267,8 +322,16 @@ export function validateAppManifest(value: unknown): {
   return validateManifestLike(value, { requireRunnableFields: true });
 }
 
-export function validateOptionalAppManifestDefaults(value: unknown): {
+export function validatePartialManifest(value: unknown): {
+  manifest?: AppManifest;
   issues: ValidationIssue[];
 } {
   return validateManifestLike(value, { requireRunnableFields: false });
+}
+
+export function validateOptionalAppManifestDefaults(value: unknown): {
+  manifest?: AppManifest;
+  issues: ValidationIssue[];
+} {
+  return validatePartialManifest(value);
 }

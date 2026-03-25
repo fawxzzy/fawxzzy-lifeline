@@ -91,6 +91,44 @@ export async function startBackgroundProcess(
   });
 }
 
+export async function startDetachedCommand(options: {
+  command: string;
+  cwd: string;
+  env: NodeJS.ProcessEnv;
+  label: string;
+}): Promise<number> {
+  return await new Promise<number>((resolve, reject) => {
+    const child = spawn(options.command, {
+      cwd: options.cwd,
+      env: options.env,
+      shell: true,
+      detached: !isWindows(),
+      stdio: "ignore",
+    });
+
+    child.on("error", (error) => {
+      reject(
+        new ProcessManagerError(
+          `Failed to start ${options.label}: ${error.message}`,
+        ),
+      );
+    });
+
+    child.on("spawn", () => {
+      child.unref();
+      if (!child.pid) {
+        reject(
+          new ProcessManagerError(
+            `Failed to start ${options.label}: missing pid.`,
+          ),
+        );
+        return;
+      }
+      resolve(child.pid);
+    });
+  });
+}
+
 export async function isProcessAlive(pid: number): Promise<boolean> {
   try {
     process.kill(pid, 0);

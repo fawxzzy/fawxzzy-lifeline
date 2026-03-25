@@ -1,11 +1,18 @@
 import http from "node:http";
 
-const port = Number(process.env.PORT || 4310);
+const port = Number(process.env.PORT || 4387);
 
 const server = http.createServer((request, response) => {
   if (request.url === "/healthz") {
     response.writeHead(200, { "content-type": "text/plain" });
     response.end("ok");
+    return;
+  }
+
+  if (request.url === "/crash") {
+    response.writeHead(500, { "content-type": "text/plain" });
+    response.end("crashing");
+    setTimeout(() => process.exit(1), 25);
     return;
   }
 

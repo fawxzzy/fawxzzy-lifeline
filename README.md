@@ -11,7 +11,7 @@ Lifeline provides a boring, low-maintenance way to describe how an app should be
 - A single-package TypeScript CLI for a manifest-defined local operator.
 - A home for a small, explicit app manifest contract.
 - A file-based config resolver that can optionally read Playbook archetype exports from a local checkout.
-- A runtime slice that can `resolve`, `up`, `down`, `status`, `logs`, `restart`, and `validate` one app on one machine.
+- A runtime slice that can `resolve`, `up`, `down`, `status`, `logs`, `restart`, `restore`, and `validate` one app on one machine.
 - Fixture-based smoke paths that verify manifest-only runtime behavior and Playbook-backed resolution without depending on an external Playbook repo.
 
 ## What Lifeline is not
@@ -39,6 +39,7 @@ pnpm lifeline up fixtures/runtime-smoke-app/runtime-smoke-app.playbook.lifeline.
 pnpm lifeline status runtime-smoke-app
 pnpm lifeline logs runtime-smoke-app
 pnpm lifeline restart runtime-smoke-app
+pnpm lifeline restore
 pnpm lifeline down runtime-smoke-app
 ```
 
@@ -109,10 +110,12 @@ Playbook archetype exports are sparse optional default bundles. They may omit an
 - validates provided `env.requiredKeys` entries
 - runs `installCommand`
 - runs `buildCommand`
-- starts `startCommand` as a background process
-- appends logs to `.lifeline/logs/<app-name>.log`
-- stores runtime state in `.lifeline/state.json`
+- starts a detached Lifeline supervisor for the app
+- supervisor starts `startCommand`, watches exits, and restarts on failures with bounded backoff
+- appends app output and supervisor lifecycle events to `.lifeline/logs/<app-name>.log`
+- stores supervisor + child runtime state in `.lifeline/state.json`
 - polls `http://127.0.0.1:<port><healthcheckPath>` for a simple health check
+- supports `lifeline restore` to restart restorable apps from persisted state
 
 ## Slim manifest example with Playbook defaults
 
@@ -136,7 +139,7 @@ pnpm lifeline resolve fixtures/runtime-smoke-app/runtime-smoke-app.playbook.life
 
 Lifeline stores its local operator artifacts under `.lifeline/`:
 
-- `.lifeline/state.json`: explicit runtime state keyed by app name, including the stored `playbookPath` when one was used
+- `.lifeline/state.json`: explicit runtime state keyed by app name, including stored manifest path, optional stored `playbookPath`, supervisor/child pids, restart metadata, and restore flags
 - `.lifeline/logs/<app-name>.log`: appended stdout/stderr logs for the managed process
 
 The directory is gitignored because it is machine-local runtime state, not source-controlled config.
@@ -172,3 +175,8 @@ YAML parsing and env-file parsing are implemented inside the repo because the co
 - [Architecture](docs/architecture.md)
 - [App manifest contract](docs/contracts/app-manifest.md)
 - [ADR 0001: Lifeline v1 scope](docs/adr/0001-lifeline-v1-scope.md)
+
+
+## Wave 1 notes
+
+Wave 1 adds a supervisor-backed lifecycle plus restore semantics. OS startup registration (login/reboot auto-start wiring) is intentionally deferred to Wave 2.

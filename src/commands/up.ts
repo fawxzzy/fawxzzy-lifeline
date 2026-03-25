@@ -8,7 +8,7 @@ import { appendLogHeader, getLogPath } from "../core/log-store.js";
 import {
   isProcessAlive,
   runForegroundCommand,
-  startBackgroundProcess,
+  startDetachedCommand,
 } from "../core/process-manager.js";
 import { resolveManifestConfig } from "../core/resolve-config.js";
 import { resolveWorkingDirectory } from "../core/resolve-working-directory.js";
@@ -73,9 +73,9 @@ export async function runUpCommand(
   try {
     const prepared = await prepareRuntimeApp(manifestPathInput, playbookPath);
     const existing = await getAppState(prepared.manifest.name);
-    if (existing && (await isProcessAlive(existing.pid))) {
+    if (existing && (await isProcessAlive(existing.supervisorPid))) {
       console.error(
-        `App ${prepared.manifest.name} is already running with pid ${existing.pid}.`,
+        `App ${prepared.manifest.name} is already managed by supervisor pid ${existing.supervisorPid}.`,
       );
       return 1;
     }
@@ -106,50 +106,64 @@ export async function runUpCommand(
       label: `${prepared.manifest.name} buildCommand`,
     });
 
-    console.log(`Starting ${prepared.manifest.name}...`);
-    const pid = await startBackgroundProcess({
-      command: prepared.manifest.startCommand,
-      cwd: prepared.workingDirectory,
-      env: prepared.env,
-      label: `${prepared.manifest.name} startCommand`,
-      logPath,
-    });
-
     const startedAt = new Date().toISOString();
     await upsertAppState({
       name: prepared.manifest.name,
       manifestPath: prepared.manifestPath,
       ...(prepared.playbookPath ? { playbookPath: prepared.playbookPath } : {}),
       workingDirectory: prepared.workingDirectory,
-      pid,
+      supervisorPid: process.pid,
+      childPid: undefined,
       port: prepared.manifest.port,
       healthcheckPath: prepared.manifest.healthcheckPath,
       logPath,
       startedAt,
-      lastKnownStatus: "running",
+      lastKnownStatus: "stopped",
+      restartPolicy: prepared.manifest.runtime.restartPolicy,
+      restartCount: 0,
+      lastExitCode: undefined,
+      lastExitAt: undefined,
+      restorable: prepared.manifest.runtime.restorable,
+      crashLoopDetected: false,
+    });
+
+    console.log(`Starting supervisor for ${prepared.manifest.name}...`);
+    const cliPath = path.resolve(process.argv[1] || "dist/cli.js");
+    const supervisorPid = await startDetachedCommand({
+      command: `${JSON.stringify(process.execPath)} ${JSON.stringify(cliPath)} supervise ${JSON.stringify(prepared.manifest.name)}`,
+      cwd: process.cwd(),
+      env: process.env,
+      label: `${prepared.manifest.name} supervisor`,
+    });
+
+    const state = await getAppState(prepared.manifest.name);
+    if (!state) {
+      console.error(`Unable to load state for app ${prepared.manifest.name}.`);
+      return 1;
+    }
+
+    await upsertAppState({
+      ...state,
+      supervisorPid,
+      startedAt,
     });
 
     const health = await waitForHealth(
       prepared.manifest.port,
       prepared.manifest.healthcheckPath,
     );
-    const lastKnownStatus = health.ok ? "running" : "unhealthy";
-    await upsertAppState({
-      name: prepared.manifest.name,
-      manifestPath: prepared.manifestPath,
-      ...(prepared.playbookPath ? { playbookPath: prepared.playbookPath } : {}),
-      workingDirectory: prepared.workingDirectory,
-      pid,
-      port: prepared.manifest.port,
-      healthcheckPath: prepared.manifest.healthcheckPath,
-      logPath,
-      startedAt,
-      lastKnownStatus,
-    });
+
+    const refreshed = await getAppState(prepared.manifest.name);
+    if (refreshed) {
+      await upsertAppState({
+        ...refreshed,
+        lastKnownStatus: health.ok ? "running" : "unhealthy",
+      });
+    }
 
     if (!health.ok) {
       console.error(
-        `App ${prepared.manifest.name} started with pid ${pid}, but healthcheck failed at http://127.0.0.1:${prepared.manifest.port}${prepared.manifest.healthcheckPath}${health.error ? `: ${health.error}` : ""}.`,
+        `App ${prepared.manifest.name} supervisor started with pid ${supervisorPid}, but healthcheck failed at http://127.0.0.1:${prepared.manifest.port}${prepared.manifest.healthcheckPath}${health.error ? `: ${health.error}` : ""}.`,
       );
       return 1;
     }
@@ -158,10 +172,13 @@ export async function runUpCommand(
       prepared.manifest.port,
       prepared.manifest.healthcheckPath,
     );
+    const finalState = await getAppState(prepared.manifest.name);
     console.log(`App ${prepared.manifest.name} is running.`);
-    console.log(`- pid: ${pid}`);
+    console.log(`- supervisor pid: ${supervisorPid}`);
+    console.log(`- child pid: ${finalState?.childPid ?? "pending"}`);
     console.log(`- port: ${prepared.manifest.port}`);
     console.log(`- log: ${logPath}`);
+    console.log(`- restartPolicy: ${prepared.manifest.runtime.restartPolicy}`);
     if (prepared.playbookPath) {
       console.log(`- playbook: ${prepared.playbookPath}`);
     }

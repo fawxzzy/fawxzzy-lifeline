@@ -4,7 +4,7 @@ Lifeline uses a simple four-part architecture.
 
 ## 1. Manifest contract
 
-The manifest contract is the source of truth for how a Lifeline-managed app should be described. It captures repo location, branch, commands, port, healthcheck, environment expectations, and deployment strategy.
+The manifest contract is the source of truth for how a Lifeline-managed app should be described. It captures repo location, branch, commands, port, healthcheck, environment expectations, deployment strategy, and runtime restart/restore policy.
 
 Manifest validation can stay structural in manifest-only mode. When a Playbook path is provided, Lifeline resolves a final config first and validates the resolved result instead.
 
@@ -17,62 +17,35 @@ Playbook is one repo with two roles:
 
 Lifeline only consumes Playbook export files from disk. There are no HTTP calls, no requirement that the Playbook UI be running, and no runtime dependency on an external service.
 
-The current export loader reads:
-
-- `schema-version.json`
-- `archetypes/next-web.yml`
-- `archetypes/node-web.yml`
-
-`schema-version.json` accepts the checked-in Playbook shape `{ "schemaVersion": <number|string>, "exportFamily": "lifeline-archetypes" }` and keeps legacy compatibility for `exportFamily: "lifeline"` and for `{ "version": <number> }`. Lifeline normalizes accepted export-family values at the boundary to `lifeline-archetypes` before continuing resolution.
-
-Failure handling is intentionally explicit:
-
-- missing export directory
-- missing schema version file
-- missing `schemaVersion`/`version`
-- wrong `exportFamily` when present
-- unsupported schema version
-- missing requested archetype file
-
-All of these fail clearly before execution.
-
 ## 3. CLI operator
 
-The CLI is the operator-facing entrypoint. In the current v1 slice it implements:
+The CLI is the operator-facing entrypoint. Current commands:
 
-- `validate`: parse YAML and validate either the raw manifest or the resolved config
-- `resolve`: print the final config that Lifeline will execute
-- `up`: resolve config, prepare env, run install/build, start the app, persist state, and perform a health check
-- `status`: recompute process liveness and health instead of trusting stale state blindly
-- `logs`: print a boring tail of the stored app log file
-- `down`: stop the process cleanly and remove runtime state
-- `restart`: stop the app and rerun the full lifecycle from the stored manifest path and stored Playbook path when applicable
+- `validate`
+- `resolve`
+- `up`
+- `down`
+- `status`
+- `logs`
+- `restart`
+- `restore`
 
-The CLI remains intentionally human-readable and narrow.
+`up` resolves config and runs install/build, then launches a detached Lifeline supervisor process (not the app process directly).
 
-## 4. Local runtime layer
+## 4. Local runtime layer (Wave 1)
 
-The runtime layer is still intentionally small:
+Wave 1 runtime behavior:
 
-- `resolve-config` merges optional Playbook defaults with explicit manifest values
-- merge precedence is fixed: Playbook defaults first, manifest values second
-- only known top-level fields plus `env` and `deploy` are merged
-- Playbook archetype exports are sparse optional default bundles; they may omit any app-default field (`installCommand`, `buildCommand`, `startCommand`, `healthcheckPath`, `env`, `deploy`, `port`), and manifest values are then used directly for missing runtime requirements
-- validation targets the final resolved config, not optional producer sections in isolation
-- missing `env.requiredKeys` is normalized during resolution to `[]`, while provided entries are still validated as non-empty strings
-- `deploy.workingDirectory` identifies the local app checkout to operate on
-- env-file parsing is in-repo and minimal (`KEY=VALUE`, comments, blank lines)
-- `child_process.spawn` runs install/build as foreground steps and start as a detached background process
-- `.lifeline/state.json` stores explicit runtime state keyed by app name, including `playbookPath` when used
-- `.lifeline/logs/<app-name>.log` stores appended stdout/stderr logs
-- health checks poll `http://127.0.0.1:<port><healthcheckPath>` for up to about 30 seconds
-- stop behavior is cross-platform: `taskkill` on Windows, process-group termination on POSIX where available
+- one supervisor process per app
+- supervisor owns and monitors the child app process
+- restart policy support: `runtime.restartPolicy` (`on-failure` or `never`)
+- bounded restart backoff with crash-loop cutoff
+- persisted runtime metadata in `.lifeline/state.json` (supervisor pid, child pid, restart counters, last exit)
+- `restore` reads persisted state and re-launches restorable supervisors idempotently
+- cross-platform stop behavior: `taskkill /T /F` on Windows, process-group termination on POSIX
 
-## Fixture-driven verification
+Logs remain file-based at `.lifeline/logs/<app>.log` and include both app output and supervisor lifecycle events.
 
-Lifeline verifies runtime behavior with in-repo fixtures instead of real external apps. That keeps CI deterministic, avoids maintenance drag, and ensures the operator stays grounded in the shared contract rather than app-specific logic.
+## Wave boundary
 
-The repository now has two complementary smoke paths:
-
-- manifest-only runtime verification with `fixtures/runtime-smoke-app/`
-- Playbook-backed resolution verification with `fixtures/playbook-export/` plus a slimmer manifest fixture
+Wave 1 intentionally does **not** add OS startup registration (systemd/NSSM/Task Scheduler/etc). That is deferred to Wave 2 after supervisor and restore behavior are proven stable.

@@ -40,7 +40,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-
 function parseSchemaVersion(
   parsedSchema: Record<string, unknown>,
   schemaVersionPath: string,
@@ -221,7 +220,10 @@ export async function loadPlaybookArchetypeDefaults(
   const validation = validateOptionalAppManifestDefaults(parsed);
   if (validation.issues.length > 0) {
     const issueLines = validation.issues
-      .map((issue) => `- ${issue.path}: ${issue.message}`)
+      .map(
+        (issue: { path: string; message: string }) =>
+          `- ${issue.path}: ${issue.message}`,
+      )
       .join("\n");
     throw new ValidationError(
       `Playbook export shape is invalid: ${archetypePath}\n${issueLines}`,

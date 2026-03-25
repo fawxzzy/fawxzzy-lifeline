@@ -45,17 +45,24 @@ function mergeManifestWithDefaults(
           ? defaults.env.requiredKeys
           : [];
 
-      merged.env = {
-        ...(defaults?.env ?? {}),
-        ...(isRecord(manifest.env) ? manifest.env : {}),
-        requiredKeys,
-      };
-    }
+    merged.env = {
+      ...(defaults?.env ?? {}),
+      ...(isRecord(manifest.env) ? manifest.env : {}),
+      requiredKeys,
+    };
+  }
 
   if (defaults?.deploy || isRecord(manifest.deploy)) {
     merged.deploy = {
       ...(defaults?.deploy ?? {}),
       ...(isRecord(manifest.deploy) ? manifest.deploy : {}),
+    };
+  }
+
+  if (defaults?.runtime || isRecord(manifest.runtime)) {
+    merged.runtime = {
+      ...(defaults?.runtime ?? {}),
+      ...(isRecord(manifest.runtime) ? manifest.runtime : {}),
     };
   }
 
