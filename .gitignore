@@ -5,3 +5,11 @@ coverage/
 *.log
 .pnpm-store/
 .lifeline/
+
+# Playbook runtime state
+.playbook/*
+!.playbook/repo-index.json
+!.playbook/repo-graph.json
+!.playbook/plan.json
+!.playbook/policy-apply-result.json
+!.playbook/managed-surfaces.json
