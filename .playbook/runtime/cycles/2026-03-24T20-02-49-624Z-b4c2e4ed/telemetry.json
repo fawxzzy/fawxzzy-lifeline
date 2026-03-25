@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.0",
+  "cycle_id": "2026-03-24T20-02-49-624Z-b4c2e4ed",
+  "trigger_command": "index",
+  "command_call_count": 1,
+  "command_call_count_by_command": {
+    "index": 1
+  },
+  "repeated_command_count": 0,
+  "command_durations": {
+    "index": 36
+  },
+  "artifact_cache_hits": 1,
+  "artifact_cache_misses": 0,
+  "internal_phase_counts": {
+    "coverage_collection": 1,
+    "ignore_recommendation_ranking": 1,
+    "dependency_scan": 1,
+    "history_update": 3,
+    "cycle_manifest_write": 1
+  },
+  "artifact_reads": {
+    "attempted": 3,
+    "found": 3,
+    "missing": 0,
+    "malformed": 0
+  },
+  "artifact_writes": {
+    "total": 8,
+    "by_artifact": {
+      "runtime/current/coverage": 1,
+      "runtime/current/telemetry": 1,
+      "runtime/current/ignore-recommendations": 1,
+      "runtime/cycle/manifest": 1,
+      "runtime/cycle/coverage": 1,
+      "runtime/cycle/telemetry": 1,
+      "runtime/cycle/ignore-recommendations": 1,
+      "runtime/history-rollups": 1
+    }
+  },
+  "graph_build_phase_count": 1,
+  "module_extraction_phase_count": 1,
+  "verify_rule_phase_count": 0,
+  "fallback_usage_counts": {
+    "coverage_denominator_defaulted": 0,
+    "total_files_denominator_defaulted": 0
+  },
+  "ignore_classification_counts": {
+    "vcs-internal": 0,
+    "build-cache": 57,
+    "generated-report": 0,
+    "temporary-file": 0,
+    "binary-asset": 0,
+    "unknown": 78
+  },
+  "parser_failure_counts": {
+    "coverage_parse_failures": 0
+  },
+  "expensive_paths": [
+    {
+      "path": ".playbook/runtime/current/coverage.json",
+      "size_bytes": 8540
+    },
+    {
+      "path": ".playbook/runtime/cycles/2026-03-24T20-02-48-917Z-ca444211/coverage.json",
+      "size_bytes": 8540
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 8195
+    },
+    {
+      "path": "src/contracts/app-manifest.ts",
+      "size_bytes": 7727
+    },
+    {
+      "path": "src/core/load-playbook-exports.ts",
+      "size_bytes": 7645
+    }
+  ],
+  "expensive_path_classes": [
+    {
+      "path_class": "unknown",
+      "total_size_bytes": 141844,
+      "file_count": 78
+    },
+    {
+      "path_class": "build-cache",
+      "total_size_bytes": 98010,
+      "file_count": 57
+    }
+  ],
+  "low_value_path_count": 69,
+  "recommendation_count": 3,
+  "warnings_count": 3,
+  "failures_count": 0
+}

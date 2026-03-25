@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.0",
+  "cycle_id": "2026-03-25T04-35-20-930Z-0c3e0be8",
+  "trigger_command": "status",
+  "command_call_count": 1,
+  "command_call_count_by_command": {
+    "status": 1
+  },
+  "repeated_command_count": 0,
+  "command_durations": {
+    "status": 987
+  },
+  "artifact_cache_hits": 1,
+  "artifact_cache_misses": 0,
+  "internal_phase_counts": {
+    "coverage_collection": 1,
+    "ignore_recommendation_ranking": 1,
+    "dependency_scan": 1,
+    "history_update": 3,
+    "cycle_manifest_write": 1
+  },
+  "artifact_reads": {
+    "attempted": 3,
+    "found": 3,
+    "missing": 0,
+    "malformed": 0
+  },
+  "artifact_writes": {
+    "total": 8,
+    "by_artifact": {
+      "runtime/current/coverage": 1,
+      "runtime/current/telemetry": 1,
+      "runtime/current/ignore-recommendations": 1,
+      "runtime/cycle/manifest": 1,
+      "runtime/cycle/coverage": 1,
+      "runtime/cycle/telemetry": 1,
+      "runtime/cycle/ignore-recommendations": 1,
+      "runtime/history-rollups": 1
+    }
+  },
+  "graph_build_phase_count": 0,
+  "module_extraction_phase_count": 0,
+  "verify_rule_phase_count": 0,
+  "fallback_usage_counts": {
+    "coverage_denominator_defaulted": 0,
+    "total_files_denominator_defaulted": 0
+  },
+  "ignore_classification_counts": {
+    "vcs-internal": 0,
+    "build-cache": 57,
+    "generated-report": 0,
+    "temporary-file": 0,
+    "binary-asset": 0,
+    "unknown": 150
+  },
+  "parser_failure_counts": {
+    "coverage_parse_failures": 0
+  },
+  "expensive_paths": [
+    {
+      "path": ".playbook/runtime/cycles/2026-03-24T20-28-19-045Z-e61099ff/coverage.json",
+      "size_bytes": 9025
+    },
+    {
+      "path": ".playbook/runtime/cycles/2026-03-24T20-40-43-006Z-324a1719/coverage.json",
+      "size_bytes": 9025
+    },
+    {
+      "path": ".playbook/runtime/cycles/2026-03-24T20-40-48-910Z-aa6497a3/coverage.json",
+      "size_bytes": 9025
+    },
+    {
+      "path": ".playbook/runtime/cycles/2026-03-25T00-08-50-808Z-3b8cd1d8/coverage.json",
+      "size_bytes": 9025
+    },
+    {
+      "path": ".playbook/runtime/cycles/2026-03-25T00-08-52-072Z-2446688b/coverage.json",
+      "size_bytes": 9025
+    }
+  ],
+  "expensive_path_classes": [
+    {
+      "path_class": "unknown",
+      "total_size_bytes": 304867,
+      "file_count": 150
+    },
+    {
+      "path_class": "build-cache",
+      "total_size_bytes": 98010,
+      "file_count": 57
+    }
+  ],
+  "low_value_path_count": 105,
+  "recommendation_count": 3,
+  "warnings_count": 3,
+  "failures_count": 0
+}

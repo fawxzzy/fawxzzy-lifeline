@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-compaction-candidates",
+  "candidates": [],
+  "summary": {
+    "total": 0,
+    "bySourceKind": {
+      "verify": 0,
+      "plan": 0,
+      "apply": 0,
+      "analyze-pr": 0,
+      "docs-audit": 0
+    },
+    "bySubjectKind": {
+      "rule": 0,
+      "task": 0,
+      "module": 0,
+      "docs": 0,
+      "artifact": 0,
+      "repository": 0
+    }
+  }
+}

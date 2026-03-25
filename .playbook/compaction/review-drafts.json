@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-compaction-review-drafts",
+  "generatedAt": "deterministic",
+  "summary": {
+    "newCardsToReview": 0,
+    "attach": 0,
+    "merge": 0,
+    "add": 0,
+    "discard": 0,
+    "deferredGeneralization": 0
+  },
+  "newCardsToReview": [],
+  "attachDecisions": [],
+  "mergeDecisions": [],
+  "addDecisions": [],
+  "discarded": []
+}

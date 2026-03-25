@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "playbook-module-context-digest",
+  "generatedAt": "2026-03-24T20:02:49.639Z",
+  "module": {
+    "name": "types",
+    "path": "src/types",
+    "type": "module"
+  },
+  "files": {
+    "count": 1,
+    "representative": [
+      "src/types/node-shim.d.ts"
+    ]
+  },
+  "dependencies": [],
+  "directDependents": [],
+  "dependents": [],
+  "rules": [
+    "protected-doc.governance",
+    "release.version-governance",
+    "requireNotesFileWhenGovernanceExists",
+    "requireNotesOnChanges",
+    "verify.rule.tests.required"
+  ],
+  "docs": [
+    "docs/architecture.md",
+    "docs/contracts/app-manifest.md",
+    "docs/scope.md"
+  ],
+  "tests": [],
+  "risk": {
+    "level": "low",
+    "score": 0,
+    "signals": [
+      "Low fan-in and limited transitive impact",
+      "warning: Verify failure signal unavailable; no .playbook/verify-report.json, .playbook/verify.json, .playbook/findings.json, or .playbook/plan.json verify payload found."
+    ]
+  },
+  "graphNeighborhood": {
+    "nodeId": "module:types",
+    "outgoingKinds": [
+      "governed_by"
+    ],
+    "incomingKinds": [
+      "contains"
+    ]
+  },
+  "provenance": {
+    "indexArtifact": ".playbook/repo-index.json",
+    "graphArtifact": ".playbook/repo-graph.json"
+  }
+}
