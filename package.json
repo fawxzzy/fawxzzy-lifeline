@@ -24,7 +24,8 @@
     "lifeline": "node dist/cli.js",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
     "smoke:playbook": "node scripts/smoke-playbook-resolution.mjs",
-    "validate:fitness:mirror": "node scripts/validate-fitness-mirror.mjs"
+    "validate:fitness:mirror": "node scripts/validate-fitness-mirror.mjs",
+    "test:validate-boundaries": "node scripts/test-validate-boundaries.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
