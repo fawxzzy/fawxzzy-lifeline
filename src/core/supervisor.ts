@@ -229,6 +229,15 @@ export async function runSupervisor(appName: string): Promise<number> {
       writeChunk("stderr", chunk);
     });
 
+    const childExit = new Promise<{
+      code: number | null;
+      signal: string | null;
+    }>((resolve) => {
+      child.on("exit", (code, signal) =>
+        resolve({ code, signal: signal ?? null }),
+      );
+    });
+
     const listenerPid = await waitForListenerPid(state.port);
     const managedChildPid = listenerPid ?? child.pid;
 
@@ -247,15 +256,6 @@ export async function runSupervisor(appName: string): Promise<number> {
       state.logPath,
       `[supervisor] ${new Date().toISOString()} child started (managed pid ${managedChildPid}, wrapper pid ${child.pid}${listenerPid ? `, listener pid ${listenerPid}` : ""})`,
     );
-
-    const childExit = new Promise<{
-      code: number | null;
-      signal: string | null;
-    }>((resolve) => {
-      child.on("exit", (code, signal) =>
-        resolve({ code, signal: signal ?? null }),
-      );
-    });
 
     const exit = await waitForManagedExit({
       wrapperPid: child.pid,
@@ -303,6 +303,19 @@ export async function runSupervisor(appName: string): Promise<number> {
     if (!shouldRestart) {
       await upsertAppState(nextState);
       return 0;
+    }
+
+    if (latest.restartCount >= RESTART_THRESHOLD) {
+      await upsertAppState({
+        ...nextState,
+        crashLoopDetected: true,
+        lastKnownStatus: "crash-loop",
+      });
+      await appendLogHeader(
+        latest.logPath,
+        `[supervisor] ${new Date().toISOString()} crash loop detected after ${latest.restartCount} retries; stopping restarts`,
+      );
+      return 1;
     }
 
     const now = Date.now();
