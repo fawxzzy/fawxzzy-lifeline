@@ -48,7 +48,8 @@
     "smoke:runtime:restore-relaunch": "node scripts/smoke-runtime-restore-relaunch.mjs",
     "smoke:runtime:restart-playbook-persisted-path": "node scripts/smoke-runtime-restart-playbook-persisted-path.mjs",
     "smoke:runtime:restore-playbook-persisted-path": "node scripts/smoke-runtime-restore-playbook-persisted-path.mjs",
-    "smoke:runtime:restore-playbook-invalid-persisted-path": "node scripts/smoke-runtime-restore-playbook-invalid-persisted-path.mjs"
+    "smoke:runtime:restore-playbook-invalid-persisted-path": "node scripts/smoke-runtime-restore-playbook-invalid-persisted-path.mjs",
+    "smoke:runtime:restart-playbook-invalid-persisted-path": "node scripts/smoke-runtime-restart-playbook-invalid-persisted-path.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
