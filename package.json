@@ -38,6 +38,7 @@
     "smoke:runtime:status-supervisor-kill": "node scripts/smoke-runtime-status-supervisor-kill.mjs",
     "smoke:runtime:status-unhealthy": "node scripts/smoke-runtime-status-unhealthy.mjs",
     "smoke:runtime:status-blocked": "node scripts/smoke-runtime-status-blocked.mjs",
+    "smoke:runtime:down-blocked-foreign-owner": "node scripts/smoke-runtime-down-blocked-foreign-owner.mjs",
     "smoke:runtime:crash-loop": "node scripts/smoke-runtime-crash-loop.mjs"
   },
   "devDependencies": {
