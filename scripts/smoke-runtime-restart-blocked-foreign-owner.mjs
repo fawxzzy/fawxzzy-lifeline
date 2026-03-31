@@ -229,6 +229,15 @@ try {
     );
   }
 
+  if (
+    restartResult.stdout.includes(`App ${appName} is running.`) ||
+    restartResult.stdout.toLowerCase().includes("restarted")
+  ) {
+    throw new Error(
+      `Expected restart failure not to report managed recovery while foreign process owns the port.\nstdout:\n${restartResult.stdout}\nstderr:\n${restartResult.stderr}`,
+    );
+  }
+
   if (!isPidAlive(foreignPid)) {
     throw new Error(`Expected foreign pid ${foreignPid} to remain alive after restart command`);
   }
