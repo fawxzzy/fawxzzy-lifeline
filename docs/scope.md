@@ -47,4 +47,14 @@ The fitness app and Playbook UI remain the initial targets because they exercise
 
 ## Wave sequencing
 
-Wave 2 extends scope with Windows startup registration (Task Scheduler), wired to the canonical `lifeline restore` flow.
+Wave 1 covers supervisor lifecycle + restore. OS startup registration (boot/login auto-start wiring) is explicitly out of scope until Wave 2.
+
+
+## Wave 2 machine-integration verification
+
+When OS startup registration is introduced, verification must remain deterministic and scoped:
+
+- **Rule:** Machine-integration features need deterministic verification even if full reboot simulation is impractical.
+- **Pattern:** Verify startup command planning, registration-state inspection, and restore-entrypoint wiring separately from literal reboot execution.
+- **Failure Mode:** Wave 2 startup registration lands without deterministic checks, making restore-on-login wiring brittle and difficult to trust.
+
