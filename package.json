@@ -56,6 +56,7 @@
     "smoke:runtime:restart-playbook-invalid-persisted-path": "node scripts/smoke-runtime-restart-playbook-invalid-persisted-path.mjs",
     "smoke:runtime:restart-invalid-persisted-manifest-path": "node scripts/smoke-runtime-restart-invalid-persisted-manifest-path.mjs",
     "smoke:runtime:up-missing-env-file": "node scripts/smoke-runtime-up-missing-env-file.mjs",
+    "smoke:runtime:up-malformed-env-file": "node scripts/smoke-runtime-up-malformed-env-file.mjs",
     "smoke:runtime:restore-missing-env-file": "node scripts/smoke-runtime-restore-missing-env-file.mjs",
     "test:startup-deterministic": "node scripts/test-wave2-startup-deterministic.mjs",
     "test:startup-roundtrip": "node scripts/test-startup-roundtrip-windows-deterministic.mjs",
