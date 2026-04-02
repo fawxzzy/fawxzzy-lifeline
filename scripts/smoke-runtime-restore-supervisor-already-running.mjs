@@ -152,6 +152,13 @@ try {
 
   const supervisorPidBeforeRestore = startedState.supervisorPid;
   const childPidBeforeRestore = startedState.childPid;
+  const portOwnerPidBeforeRestore = startedState.portOwnerPid;
+
+  if (portOwnerPidBeforeRestore !== childPidBeforeRestore) {
+    throw new Error(
+      `Expected running state to report child-owned port before restore, child=${childPidBeforeRestore} portOwner=${portOwnerPidBeforeRestore}`,
+    );
+  }
 
   if (await canBindPort(runtimePort)) {
     throw new Error(`Expected managed runtime port ${runtimePort} to be occupied before restore`);
@@ -194,6 +201,12 @@ try {
   if (runningStateAfterRestore.childPid !== childPidBeforeRestore) {
     throw new Error(
       `Expected restore to keep child pid unchanged (${childPidBeforeRestore}), found ${runningStateAfterRestore.childPid}`,
+    );
+  }
+
+  if (runningStateAfterRestore.portOwnerPid !== childPidBeforeRestore) {
+    throw new Error(
+      `Expected persisted port owner to remain managed child pid ${childPidBeforeRestore}, found ${runningStateAfterRestore.portOwnerPid}`,
     );
   }
 
