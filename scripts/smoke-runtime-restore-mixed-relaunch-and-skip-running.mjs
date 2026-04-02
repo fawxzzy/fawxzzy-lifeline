@@ -292,15 +292,15 @@ try {
   }
 
   const runningAfterRestore = await waitForRunning(runningAppName);
-  if (runningAfterRestore.supervisorPid !== runningStartedState.supervisorPid) {
+  if (runningAfterRestore.supervisorPid !== runningBeforeRestore.supervisorPid) {
     throw new Error(
-      `Expected running app supervisor pid to remain unchanged on restore skip, before=${runningStartedState.supervisorPid} after=${runningAfterRestore.supervisorPid}`,
+      `Expected running app supervisor pid to remain unchanged on restore skip, before=${runningBeforeRestore.supervisorPid} after=${runningAfterRestore.supervisorPid}`,
     );
   }
 
-  if (runningAfterRestore.childPid !== runningStartedState.childPid) {
+  if (runningAfterRestore.childPid !== runningBeforeRestore.childPid) {
     throw new Error(
-      `Expected running app child pid to remain unchanged on restore skip, before=${runningStartedState.childPid} after=${runningAfterRestore.childPid}`,
+      `Expected running app child pid to remain unchanged on restore skip, before=${runningBeforeRestore.childPid} after=${runningAfterRestore.childPid}`,
     );
   }
 
