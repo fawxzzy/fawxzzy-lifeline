@@ -75,6 +75,11 @@ try {
       `Expected validate to fail when Playbook export shape is invalid.\nstdout:\n${validateResult.stdout}\nstderr:\n${validateResult.stderr}`,
     );
   }
+  if (validateResult.code !== 1) {
+    throw new Error(
+      `Expected validate to exit with code 1 for invalid Playbook exports, received ${validateResult.code}.\nstdout:\n${validateResult.stdout}\nstderr:\n${validateResult.stderr}`,
+    );
+  }
 
   const combinedOutput = `${validateResult.stdout}\n${validateResult.stderr}`;
 
