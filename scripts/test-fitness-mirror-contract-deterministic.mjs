@@ -17,6 +17,21 @@ function assertIncludesIssue(issues, expectedPath, expectedMessage) {
   );
 }
 
+function assertExactIssues(issues, expectedIssues) {
+  assert(
+    issues.length === expectedIssues.length,
+    [
+      `Expected ${expectedIssues.length} issues but received ${issues.length}`,
+      `Expected: ${JSON.stringify(expectedIssues, null, 2)}`,
+      `Actual: ${JSON.stringify(issues, null, 2)}`,
+    ].join('\n'),
+  );
+
+  for (const expectedIssue of expectedIssues) {
+    assertIncludesIssue(issues, expectedIssue.path, expectedIssue.message);
+  }
+}
+
 function makeValidMirror() {
   return {
     name: 'fitness',
@@ -30,10 +45,10 @@ function makeValidMirror() {
 }
 
 const valid = validateFitnessMirrorManifest(makeValidMirror());
-assert(valid.length === 0, `Expected canonical fitness mirror to have no issues: ${JSON.stringify(valid)}`);
+assertExactIssues(valid, []);
 
 const nonObject = validateFitnessMirrorManifest('not-an-object');
-assertIncludesIssue(nonObject, '$', 'manifest must be a YAML object');
+assertExactIssues(nonObject, [{ path: '$', message: 'manifest must be a YAML object' }]);
 
 const wrongTopLevelKeys = validateFitnessMirrorManifest({
   ...makeValidMirror(),
@@ -52,20 +67,18 @@ const wrongFieldValues = validateFitnessMirrorManifest({
   port: 4400,
   healthcheckPath: '/health',
 });
-assertIncludesIssue(wrongFieldValues, 'name', "must equal 'fitness' for Fitness mirror boundary");
-assertIncludesIssue(wrongFieldValues, 'archetype', "must equal 'node-web' for Fitness mirror boundary");
-assertIncludesIssue(wrongFieldValues, 'port', 'must equal 4301 for Fitness mirror boundary');
-assertIncludesIssue(
-  wrongFieldValues,
-  'healthcheckPath',
-  "must equal '/login' for Fitness mirror boundary",
-);
+assertExactIssues(wrongFieldValues, [
+  { path: 'name', message: "must equal 'fitness' for Fitness mirror boundary" },
+  { path: 'archetype', message: "must equal 'node-web' for Fitness mirror boundary" },
+  { path: 'port', message: 'must equal 4301 for Fitness mirror boundary' },
+  { path: 'healthcheckPath', message: "must equal '/login' for Fitness mirror boundary" },
+]);
 
 const deployWrongType = validateFitnessMirrorManifest({
   ...makeValidMirror(),
   deploy: 'not-an-object',
 });
-assertIncludesIssue(deployWrongType, 'deploy', 'must be an object');
+assertExactIssues(deployWrongType, [{ path: 'deploy', message: 'must be an object' }]);
 
 const deployWrongKeys = validateFitnessMirrorManifest({
   ...makeValidMirror(),
@@ -74,7 +87,7 @@ const deployWrongKeys = validateFitnessMirrorManifest({
     extra: 'value',
   },
 });
-assertIncludesIssue(deployWrongKeys, 'deploy', 'expected deploy keys: workingDirectory');
+assertExactIssues(deployWrongKeys, [{ path: 'deploy', message: 'expected deploy keys: workingDirectory' }]);
 
 const deployWrongWorkingDirectory = validateFitnessMirrorManifest({
   ...makeValidMirror(),
@@ -82,10 +95,25 @@ const deployWrongWorkingDirectory = validateFitnessMirrorManifest({
     workingDirectory: '.',
   },
 });
-assertIncludesIssue(
-  deployWrongWorkingDirectory,
-  'deploy.workingDirectory',
-  "must equal '..' for Fitness mirror boundary",
-);
+assertExactIssues(deployWrongWorkingDirectory, [
+  {
+    path: 'deploy.workingDirectory',
+    message: "must equal '..' for Fitness mirror boundary",
+  },
+]);
+
+const deployNestedMismatches = validateFitnessMirrorManifest({
+  ...makeValidMirror(),
+  deploy: {
+    wrongKey: 'x',
+  },
+});
+assertExactIssues(deployNestedMismatches, [
+  { path: 'deploy', message: 'expected deploy keys: workingDirectory' },
+  {
+    path: 'deploy.workingDirectory',
+    message: "must equal '..' for Fitness mirror boundary",
+  },
+]);
 
 console.log('fitness-mirror contract deterministic checks passed');
