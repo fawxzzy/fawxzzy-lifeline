@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { validateAppManifest } from "../contracts/app-manifest.js";
 import {
   validateFitnessMirrorManifestFile,
@@ -7,10 +9,12 @@ import { loadManifestFile } from "../core/load-manifest.js";
 import { resolveManifestConfig } from "../core/resolve-config.js";
 
 const FITNESS_MIRROR_MANIFEST_PATH = "examples/fitness-app.lifeline.yml";
+const FITNESS_MIRROR_MANIFEST_ABSOLUTE_PATH = path.resolve(
+  FITNESS_MIRROR_MANIFEST_PATH,
+);
 
 function isFitnessMirrorManifestPath(manifestPath: string): boolean {
-  const normalized = manifestPath.replace(/\\/g, "/").replace(/^\.\//, "");
-  return normalized === FITNESS_MIRROR_MANIFEST_PATH;
+  return path.resolve(manifestPath) === FITNESS_MIRROR_MANIFEST_ABSOLUTE_PATH;
 }
 
 export async function runValidateCommand(
