@@ -39,6 +39,78 @@ async function ensureStateDirectory(): Promise<void> {
   await mkdir(LIFELINE_DIR, { recursive: true });
 }
 
+function isRuntimeStatus(value: unknown): value is RuntimeStatus {
+  return (
+    value === "running" ||
+    value === "stopped" ||
+    value === "unhealthy" ||
+    value === "crash-loop" ||
+    value === "blocked"
+  );
+}
+
+function isRestartPolicy(value: unknown): value is RestartPolicy {
+  return value === "on-failure" || value === "never";
+}
+
+function isOptionalString(value: unknown): value is string | undefined {
+  return value === undefined || typeof value === "string";
+}
+
+function isOptionalInteger(value: unknown): value is number | undefined {
+  return value === undefined || (typeof value === "number" && Number.isInteger(value));
+}
+
+function isValidRuntimeAppState(value: unknown): value is RuntimeAppState {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    typeof candidate.name === "string" &&
+    typeof candidate.manifestPath === "string" &&
+    isOptionalString(candidate.playbookPath) &&
+    typeof candidate.workingDirectory === "string" &&
+    typeof candidate.supervisorPid === "number" &&
+    Number.isInteger(candidate.supervisorPid) &&
+    isOptionalInteger(candidate.childPid) &&
+    isOptionalInteger(candidate.wrapperPid) &&
+    isOptionalInteger(candidate.listenerPid) &&
+    isOptionalInteger(candidate.portOwnerPid) &&
+    typeof candidate.port === "number" &&
+    Number.isInteger(candidate.port) &&
+    typeof candidate.healthcheckPath === "string" &&
+    typeof candidate.logPath === "string" &&
+    typeof candidate.startedAt === "string" &&
+    isRuntimeStatus(candidate.lastKnownStatus) &&
+    isRestartPolicy(candidate.restartPolicy) &&
+    typeof candidate.restartCount === "number" &&
+    Number.isInteger(candidate.restartCount) &&
+    isOptionalInteger(candidate.lastExitCode) &&
+    isOptionalString(candidate.lastExitAt) &&
+    typeof candidate.restorable === "boolean" &&
+    typeof candidate.crashLoopDetected === "boolean" &&
+    isOptionalString(candidate.blockedReason)
+  );
+}
+
+function sanitizeApps(value: unknown): Record<string, RuntimeAppState> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  const apps: Record<string, RuntimeAppState> = {};
+  for (const [appName, appState] of Object.entries(value)) {
+    if (isValidRuntimeAppState(appState)) {
+      apps[appName] = appState;
+    }
+  }
+
+  return apps;
+}
+
 export async function getStatePath(): Promise<string> {
   return STATE_PATH;
 }
@@ -56,11 +128,7 @@ export async function readState(): Promise<RuntimeStateFile> {
     return { apps: {} };
   }
 
-  const apps =
-    parsed.apps && typeof parsed.apps === "object" && !Array.isArray(parsed.apps)
-      ? parsed.apps
-      : {};
-  return { apps };
+  return { apps: sanitizeApps(parsed.apps) };
 }
 
 export async function writeState(state: RuntimeStateFile): Promise<void> {
