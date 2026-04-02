@@ -246,6 +246,10 @@ try {
     throw new Error(`Expected app A to relaunch with a new supervisor pid, still ${appARestored.supervisorPid}`);
   }
 
+  if (appARestored.childPid === appAStarted.childPid) {
+    throw new Error(`Expected app A to relaunch with a new child pid, still ${appARestored.childPid}`);
+  }
+
   const appAStatus = await run(["status", appAName], { allowFailure: true });
   if (appAStatus.code !== 0 || !appAStatus.stdout.includes(`App ${appAName} is running.`)) {
     throw new Error(
@@ -258,6 +262,18 @@ try {
   const appBAfterRestore = await readRuntimeState(appBName);
   if (!appBAfterRestore) {
     throw new Error("Expected app B persisted state to remain after restore failure");
+  }
+
+  if (appBAfterRestore.supervisorPid !== appBStarted.supervisorPid) {
+    throw new Error(
+      `Expected app B supervisor pid to remain unchanged after failed restore; before=${appBStarted.supervisorPid} after=${appBAfterRestore.supervisorPid}`,
+    );
+  }
+
+  if (appBAfterRestore.childPid !== appBStarted.childPid) {
+    throw new Error(
+      `Expected app B child pid to remain unchanged after failed restore; before=${appBStarted.childPid} after=${appBAfterRestore.childPid}`,
+    );
   }
 
   if (appBAfterRestore.supervisorPid && isPidAlive(appBAfterRestore.supervisorPid)) {
