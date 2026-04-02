@@ -194,7 +194,7 @@ try {
     );
   }
 
-  const expectedSkipMessage = `Skipping ${appName}: restorable: false (explicitly excluded from restore).`;
+  const expectedSkipMessage = `Skipping ${appName}: app is marked restorable: false; skipping restore.`;
   if (!restoreResult.stdout.includes(expectedSkipMessage)) {
     throw new Error(
       `Expected restore output to include explicit non-restorable skip message.\nstdout:\n${restoreResult.stdout}\nstderr:\n${restoreResult.stderr}`,
