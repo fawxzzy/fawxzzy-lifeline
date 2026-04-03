@@ -10,30 +10,17 @@ function assert(condition, message) {
   }
 }
 
-function assertIncludesIssue(issues, expectedPath, expectedMessage) {
-  const match = issues.find((issue) => issue.path === expectedPath && issue.message === expectedMessage);
-  assert(
-    Boolean(match),
-    [
-      `Expected issue { path: ${expectedPath}, message: ${expectedMessage} }`,
-      `Actual issues: ${JSON.stringify(issues, null, 2)}`,
-    ].join('\n'),
-  );
-}
-
 function assertExactIssues(issues, expectedIssues) {
+  const actual = JSON.stringify(issues);
+  const expected = JSON.stringify(expectedIssues);
   assert(
-    issues.length === expectedIssues.length,
+    actual === expected,
     [
-      `Expected ${expectedIssues.length} issues but received ${issues.length}`,
+      'Issue mismatch.',
       `Expected: ${JSON.stringify(expectedIssues, null, 2)}`,
       `Actual: ${JSON.stringify(issues, null, 2)}`,
     ].join('\n'),
   );
-
-  for (const expectedIssue of expectedIssues) {
-    assertIncludesIssue(issues, expectedIssue.path, expectedIssue.message);
-  }
 }
 
 function makeValidManifest() {
@@ -76,31 +63,33 @@ const unsupportedArchetype = validateAppManifest({
   ...makeValidManifest(),
   archetype: 'python-web',
 });
-assertIncludesIssue(unsupportedArchetype.issues, 'archetype', 'must be one of: next-web, node-web');
+assertExactIssues(unsupportedArchetype.issues, [
+  { path: 'archetype', message: 'must be one of: next-web, node-web' },
+]);
 
 const invalidHealthcheckPath = validateAppManifest({
   ...makeValidManifest(),
   healthcheckPath: 'health',
 });
-assertIncludesIssue(invalidHealthcheckPath.issues, 'healthcheckPath', "must start with '/'");
+assertExactIssues(invalidHealthcheckPath.issues, [
+  { path: 'healthcheckPath', message: "must start with '/'" },
+]);
 
-const invalidPorts = [0, 65536, 12.5, '4301'];
-for (const port of invalidPorts) {
+for (const port of [0, 65536, 12.5, '4301']) {
   const result = validateAppManifest({ ...makeValidManifest(), port });
-  assertIncludesIssue(result.issues, 'port', 'must be an integer between 1 and 65535');
+  assertExactIssues(result.issues, [
+    { path: 'port', message: 'must be an integer between 1 and 65535' },
+  ]);
 }
 
-const validLowestPort = validateAppManifest({
-  ...makeValidManifest(),
-  port: 1,
-});
-assertExactIssues(validLowestPort.issues, []);
-
-const validHighestPort = validateAppManifest({
-  ...makeValidManifest(),
-  port: 65535,
-});
-assertExactIssues(validHighestPort.issues, []);
+assertExactIssues(
+  validateAppManifest({ ...makeValidManifest(), port: 1 }).issues,
+  [],
+);
+assertExactIssues(
+  validateAppManifest({ ...makeValidManifest(), port: 65535 }).issues,
+  [],
+);
 
 const legacyRequired = validateAppManifest({
   ...makeValidManifest(),
@@ -109,7 +98,9 @@ const legacyRequired = validateAppManifest({
     required: ['LEGACY_KEY'],
   },
 });
-assertIncludesIssue(legacyRequired.issues, 'env.required', 'has been renamed to env.requiredKeys');
+assertExactIssues(legacyRequired.issues, [
+  { path: 'env.required', message: 'has been renamed to env.requiredKeys' },
+]);
 
 const requiredKeysPreferredOverLegacy = validateAppManifest({
   ...makeValidManifest(),
@@ -132,11 +123,12 @@ const invalidRequiredKeysShape = validateAppManifest({
     requiredKeys: [42],
   },
 });
-assertIncludesIssue(
-  invalidRequiredKeysShape.issues,
-  'env.requiredKeys',
-  'must be an array when provided, and each key must be a non-empty string',
-);
+assertExactIssues(invalidRequiredKeysShape.issues, [
+  {
+    path: 'env.requiredKeys',
+    message: 'must be an array when provided, and each key must be a non-empty string',
+  },
+]);
 
 const fileModeMissingFile = validateAppManifest({
   ...makeValidManifest(),
@@ -145,7 +137,9 @@ const fileModeMissingFile = validateAppManifest({
     requiredKeys: [],
   },
 });
-assertIncludesIssue(fileModeMissingFile.issues, 'env.file', "is required when env.mode is 'file'");
+assertExactIssues(fileModeMissingFile.issues, [
+  { path: 'env.file', message: "is required when env.mode is 'file'" },
+]);
 
 const invalidRuntimeRestartPolicy = validateAppManifest({
   ...makeValidManifest(),
@@ -154,11 +148,9 @@ const invalidRuntimeRestartPolicy = validateAppManifest({
     restorable: true,
   },
 });
-assertIncludesIssue(
-  invalidRuntimeRestartPolicy.issues,
-  'runtime.restartPolicy',
-  'must be one of: on-failure, never',
-);
+assertExactIssues(invalidRuntimeRestartPolicy.issues, [
+  { path: 'runtime.restartPolicy', message: 'must be one of: on-failure, never' },
+]);
 
 const invalidRuntimeRestorable = validateAppManifest({
   ...makeValidManifest(),
@@ -167,7 +159,9 @@ const invalidRuntimeRestorable = validateAppManifest({
     restorable: 'sometimes',
   },
 });
-assertIncludesIssue(invalidRuntimeRestorable.issues, 'runtime.restorable', 'must be a boolean');
+assertExactIssues(invalidRuntimeRestorable.issues, [
+  { path: 'runtime.restorable', message: 'must be a boolean' },
+]);
 
 const runtimeStringBooleans = validateAppManifest({
   ...makeValidManifest(),
@@ -225,5 +219,14 @@ const optionalDefaultsAlias = validateOptionalAppManifestDefaults({
 });
 assertExactIssues(optionalDefaultsAlias.issues, []);
 assert(optionalDefaultsAlias.manifest?.runtime.restorable === true, 'Expected optional defaults alias to normalize runtime.restorable true.');
+
+const optionalDefaultsPreservePartialContract = validateOptionalAppManifestDefaults({
+  env: {
+    mode: 'file',
+  },
+});
+assertExactIssues(optionalDefaultsPreservePartialContract.issues, [
+  { path: 'env.file', message: "is required when env.mode is 'file'" },
+]);
 
 console.log('app-manifest contract deterministic checks passed');
