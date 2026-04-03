@@ -108,6 +108,22 @@ function assertNoSuccessSurface(name, result) {
     !result.stdout.includes("- health:"),
     `${name}: expected stdout to avoid success health summary, received:\n${result.stdout}`,
   );
+  assert(
+    !result.stderr.includes(" is running."),
+    `${name}: expected stderr to avoid success running surface, received:\n${result.stderr}`,
+  );
+  assert(
+    !result.stdout.includes("Starting supervisor for"),
+    `${name}: expected stdout to avoid supervisor startup line, received:\n${result.stdout}`,
+  );
+  assert(
+    !result.stdout.includes("Installing "),
+    `${name}: expected stdout to avoid install step on early failure, received:\n${result.stdout}`,
+  );
+  assert(
+    !result.stdout.includes("Building "),
+    `${name}: expected stdout to avoid build step on early failure, received:\n${result.stdout}`,
+  );
 }
 
 let tempRoot;
@@ -196,6 +212,18 @@ try {
   assert(
     /- health:\s+(ok|200)/.test(successResult.stdout),
     `success path: expected health summary line, got:\n${successResult.stdout}`,
+  );
+  assert(
+    successResult.stdout.includes(`Installing ${successAppName} in ${path.dirname(successFixture.manifestPath)}...`),
+    `success path: expected install step summary, got:\n${successResult.stdout}`,
+  );
+  assert(
+    successResult.stdout.includes(`Building ${successAppName} in ${path.dirname(successFixture.manifestPath)}...`),
+    `success path: expected build step summary, got:\n${successResult.stdout}`,
+  );
+  assert(
+    successResult.stdout.includes(`Starting supervisor for ${successAppName}...`),
+    `success path: expected supervisor startup line, got:\n${successResult.stdout}`,
   );
 
   startedApps.add(successAppName);

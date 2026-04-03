@@ -105,6 +105,18 @@ function assertSuccessSurface(name, result, appName, port) {
   assert(result.code === 0, `${name}: expected exit code 0, got ${result.code}.\n${result.stderr}`);
   assert(result.stderr.trim().length === 0, `${name}: expected empty stderr, got:\n${result.stderr}`);
   assert(
+    result.stdout.includes(`Installing ${appName} in `),
+    `${name}: expected install phase line, got:\n${result.stdout}`,
+  );
+  assert(
+    result.stdout.includes(`Building ${appName} in `),
+    `${name}: expected build phase line, got:\n${result.stdout}`,
+  );
+  assert(
+    result.stdout.includes(`Starting supervisor for ${appName}...`),
+    `${name}: expected supervisor startup line, got:\n${result.stdout}`,
+  );
+  assert(
     result.stdout.includes(`App ${appName} is running.`),
     `${name}: expected running headline, got:\n${result.stdout}`,
   );
