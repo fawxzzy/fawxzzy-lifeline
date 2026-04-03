@@ -126,6 +126,13 @@ function assertNoSuccessSurface(name, result) {
   );
 }
 
+function extractSummaryLines(output) {
+  return output
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.startsWith("- "));
+}
+
 let tempRoot;
 const startedApps = new Set();
 
@@ -198,6 +205,10 @@ try {
   const successResult = await runCli(["up", successFixture.manifestPath]);
   assert(successResult.code === 0, `success path: expected exit code 0, got ${successResult.code}.`);
   assert(
+    successResult.stderr.trim().length === 0,
+    `success path: expected empty stderr on successful up, got:\n${successResult.stderr}`,
+  );
+  assert(
     successResult.stdout.includes(`App ${successAppName} is running.`),
     `success path: expected running headline, got:\n${successResult.stdout}`,
   );
@@ -224,6 +235,11 @@ try {
   assert(
     successResult.stdout.includes(`Starting supervisor for ${successAppName}...`),
     `success path: expected supervisor startup line, got:\n${successResult.stdout}`,
+  );
+  const successSummaryLines = extractSummaryLines(successResult.stdout);
+  assert(
+    successSummaryLines.length >= 5,
+    `success path: expected summary block lines, got:\n${successResult.stdout}`,
   );
 
   startedApps.add(successAppName);

@@ -135,6 +135,25 @@ function assertSuccessSurface(name, result, appName, port) {
   );
 }
 
+function extractContractSurface(output, appName, port) {
+  return output
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.length > 0)
+    .map((line) =>
+      line
+        .replace(appName, "<app-name>")
+        .replace(String(port), "<port>")
+        .replace(/- supervisor pid:\s+\d+/, "- supervisor pid: <pid>")
+        .replace(/- child pid:\s+\d+/, "- child pid: <pid>")
+        .replace(/- log:\s+.*/, "- log: <log-path>")
+        .replace(/- playbook:\s+.*/, "- playbook: <playbook-path>")
+        .replace(/- health:\s+.*/, "- health: <health>")
+        .replace(/^(Installing <app-name> in ).*(\.\.\.)$/, "$1<working-directory>$2")
+        .replace(/^(Building <app-name> in ).*(\.\.\.)$/, "$1<working-directory>$2"),
+    );
+}
+
 let tempRoot;
 const startedApps = new Set();
 
@@ -165,6 +184,29 @@ try {
   assert(
     envResult.stdout.includes(`- playbook: ${resolvedPlaybookPath}`),
     `env-var LIFELINE_PLAYBOOK_PATH: expected playbook line to reflect env path, got:\n${envResult.stdout}`,
+  );
+  const explicitContractSurface = extractContractSurface(
+    explicitResult.stdout,
+    explicitAppName,
+    explicitPort,
+  );
+  const envContractSurface = extractContractSurface(
+    envResult.stdout,
+    envAppName,
+    envPort,
+  );
+  assert(
+    JSON.stringify(explicitContractSurface) === JSON.stringify(envContractSurface),
+    [
+      "playbook ingress parity: expected equivalent success contract lines across",
+      "explicit --playbook-path and LIFELINE_PLAYBOOK_PATH flows.",
+      "",
+      "explicit:",
+      explicitContractSurface.join("\n"),
+      "",
+      "env:",
+      envContractSurface.join("\n"),
+    ].join("\n"),
   );
   startedApps.add(envAppName);
 
