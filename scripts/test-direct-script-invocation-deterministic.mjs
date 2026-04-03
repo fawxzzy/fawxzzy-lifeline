@@ -59,4 +59,33 @@ assert(
   ].join('\n'),
 );
 
+
+const runnerRelativePath = 'scripts/smoke-runner.mjs';
+const runnerAbsolutePath = resolve(repoRoot, runnerRelativePath);
+
+const runnerRelativeUsage = runNode([runnerRelativePath], repoRoot);
+const runnerAbsoluteUsage = runNode([runnerAbsolutePath], externalCwd);
+
+assert(runnerRelativeUsage.status === 1, `smoke-runner relative usage exit drifted:
+${runnerRelativeUsage.stdout}
+${runnerRelativeUsage.stderr}`);
+assert(runnerAbsoluteUsage.status === 1, `smoke-runner absolute usage exit drifted:
+${runnerAbsoluteUsage.stdout}
+${runnerAbsoluteUsage.stderr}`);
+assert(
+  runnerRelativeUsage.stdout === runnerAbsoluteUsage.stdout,
+  [
+    'smoke-runner usage stdout mismatch',
+    `relative: ${JSON.stringify(runnerRelativeUsage.stdout)}`,
+    `absolute: ${JSON.stringify(runnerAbsoluteUsage.stdout)}`,
+  ].join('\n'),
+);
+assert(
+  runnerRelativeUsage.stderr === runnerAbsoluteUsage.stderr,
+  [
+    'smoke-runner usage stderr mismatch',
+    `relative: ${JSON.stringify(runnerRelativeUsage.stderr)}`,
+    `absolute: ${JSON.stringify(runnerAbsoluteUsage.stderr)}`,
+  ].join('\n'),
+);
 console.log('direct script invocation deterministic checks passed');
