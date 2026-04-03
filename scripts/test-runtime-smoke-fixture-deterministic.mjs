@@ -37,7 +37,7 @@ function assertSuccess(result, label) {
 
 function assertContainsAll(output, markers) {
   for (const marker of markers) {
-    assert(output.includes(marker), `Expected output marker \"${marker}\".\n${output}`);
+    assert(output.includes(marker), `Expected output marker "${marker}".\n${output}`);
   }
 }
 
@@ -48,12 +48,22 @@ assertSuccess(validateFixtureAbsolute, "runtime smoke fixture absolute validate"
 assertContainsAll(validateFixtureRelative.stdout, ["Manifest is valid:", "- app: runtime-smoke-app", "- port: 5322"]);
 assertContainsAll(validateFixtureAbsolute.stdout, ["Manifest is valid:", "- app: runtime-smoke-app", "- port: 5322"]);
 
-const resolvedFixtureResult = runCli(["resolve", fixtureManifestPath]);
-assertSuccess(resolvedFixtureResult, "runtime smoke fixture resolve");
-const resolvedFixture = JSON.parse(resolvedFixtureResult.stdout);
+const resolvedFixtureRelativeResult = runCli(["resolve", fixtureManifestPath]);
+const resolvedFixtureAbsoluteResult = runCli(["resolve", resolve(repoRoot, fixtureManifestPath)]);
+assertSuccess(resolvedFixtureRelativeResult, "runtime smoke fixture relative resolve");
+assertSuccess(resolvedFixtureAbsoluteResult, "runtime smoke fixture absolute resolve");
+
+const resolvedFixture = JSON.parse(resolvedFixtureRelativeResult.stdout);
+const resolvedFixtureAbsolute = JSON.parse(resolvedFixtureAbsoluteResult.stdout);
+assert(
+  JSON.stringify(resolvedFixture) === JSON.stringify(resolvedFixtureAbsolute),
+  "Expected runtime fixture relative/absolute resolve output to match exactly.",
+);
 
 assert(resolvedFixture.name === "runtime-smoke-app", `Unexpected fixture app name: ${resolvedFixture.name}`);
 assert(resolvedFixture.archetype === "node-web", `Unexpected fixture archetype: ${resolvedFixture.archetype}`);
+assert(resolvedFixture.installCommand, "Expected fixture installCommand to be present.");
+assert(resolvedFixture.buildCommand, "Expected fixture buildCommand to be present.");
 assert(resolvedFixture.startCommand === "node server.js", `Unexpected startCommand: ${resolvedFixture.startCommand}`);
 assert(resolvedFixture.port === 5322, `Unexpected fixture port: ${resolvedFixture.port}`);
 assert(resolvedFixture.healthcheckPath === "/healthz", `Unexpected healthcheckPath: ${resolvedFixture.healthcheckPath}`);
@@ -106,12 +116,28 @@ const resolvedPlaybookFixtureResult = runCli([
   "--playbook-path",
   playbookPath,
 ]);
-assertSuccess(resolvedPlaybookFixtureResult, "runtime playbook fixture resolve");
+const resolvedPlaybookFixtureAbsoluteResult = runCli([
+  "resolve",
+  resolve(repoRoot, fixturePlaybookManifestPath),
+  "--playbook-path",
+  resolve(repoRoot, playbookPath),
+]);
+assertSuccess(resolvedPlaybookFixtureResult, "runtime playbook fixture relative resolve");
+assertSuccess(resolvedPlaybookFixtureAbsoluteResult, "runtime playbook fixture absolute resolve");
 
 const resolvedPlaybookFixture = JSON.parse(resolvedPlaybookFixtureResult.stdout);
+const resolvedPlaybookFixtureAbsolute = JSON.parse(resolvedPlaybookFixtureAbsoluteResult.stdout);
+assert(
+  JSON.stringify(resolvedPlaybookFixture) === JSON.stringify(resolvedPlaybookFixtureAbsolute),
+  "Expected runtime playbook fixture relative/absolute resolve output to match exactly.",
+);
+
 assert(resolvedPlaybookFixture.name === "runtime-smoke-app", `Unexpected playbook app name: ${resolvedPlaybookFixture.name}`);
 assert(resolvedPlaybookFixture.archetype === "node-web", `Unexpected playbook archetype: ${resolvedPlaybookFixture.archetype}`);
-assert(resolvedPlaybookFixture.startCommand === "node server.js", `Unexpected playbook startCommand: ${resolvedPlaybookFixture.startCommand}`);
+assert(
+  resolvedPlaybookFixture.startCommand === "node server.js",
+  `Unexpected playbook startCommand: ${resolvedPlaybookFixture.startCommand}`,
+);
 assert(resolvedPlaybookFixture.port === 4387, `Unexpected playbook fixture port: ${resolvedPlaybookFixture.port}`);
 assert(
   resolvedPlaybookFixture.env?.file === ".env.runtime",
@@ -135,5 +161,6 @@ const playbookEnvPath = resolve(fixtureDir, resolvedPlaybookFixture.env.file);
 assert(existsSync(playbookEnvPath), `Expected playbook fixture env file to exist: ${playbookEnvPath}`);
 const playbookWorkingDir = resolve(fixtureDir, resolvedPlaybookFixture.deploy.workingDirectory);
 assert(existsSync(playbookWorkingDir), `Expected playbook resolved workingDirectory to exist: ${playbookWorkingDir}`);
+assert(existsSync(resolve(playbookWorkingDir, "server.js")), "Expected server.js to exist for playbook resolved workingDirectory.");
 
 console.log("Runtime smoke fixture deterministic verification passed.");

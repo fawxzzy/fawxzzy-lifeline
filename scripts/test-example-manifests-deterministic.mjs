@@ -8,6 +8,7 @@ await ensureBuilt();
 
 const repoRoot = process.cwd();
 const cliPath = resolve(repoRoot, "dist/cli.js");
+const mirrorValidatorPath = resolve(repoRoot, "scripts/validate-fitness-mirror.mjs");
 const externalCwd = mkdtempSync(resolve(tmpdir(), "lifeline-example-manifest-deterministic-"));
 
 function assert(condition, message) {
@@ -61,8 +62,11 @@ assertAll(fitnessAbsolute.output, [
 ]);
 
 const mirrorValidatorRelative = runNode(["scripts/validate-fitness-mirror.mjs"], repoRoot);
+const mirrorValidatorAbsolute = runNode([mirrorValidatorPath], repoRoot);
 assertSuccess(mirrorValidatorRelative, "fitness mirror validator (relative invocation)");
+assertSuccess(mirrorValidatorAbsolute, "fitness mirror validator (absolute invocation)");
 assertAll(mirrorValidatorRelative.output, ["Fitness mirror validation passed"]);
+assertAll(mirrorValidatorAbsolute.output, ["Fitness mirror validation passed"]);
 
 const playbookRelativePath = "examples/playbook-ui.lifeline.yml";
 const playbookAbsolutePath = resolve(repoRoot, playbookRelativePath);
