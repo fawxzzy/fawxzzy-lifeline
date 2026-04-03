@@ -1,4 +1,12 @@
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdtempSync,
+  mkdirSync,
+  copyFileSync,
+  cpSync,
+  rmSync,
+} from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
@@ -42,8 +50,16 @@ assert(
 );
 assert(successAbsolute.stderr === '', `absolute success should not write stderr:\n${successAbsolute.stderr}`);
 
-const mirrorPath = resolve(repoRoot, 'examples/fitness-app.lifeline.yml');
-const originalMirror = readFileSync(mirrorPath, 'utf8');
+const tempRoot = mkdtempSync(resolve(tmpdir(), 'lifeline-validate-fitness-failure-'));
+const tempScriptDir = resolve(tempRoot, 'scripts');
+const tempExamplesDir = resolve(tempRoot, 'examples');
+mkdirSync(tempScriptDir, { recursive: true });
+mkdirSync(tempExamplesDir, { recursive: true });
+
+copyFileSync(resolve(repoRoot, 'scripts/validate-fitness-mirror.mjs'), resolve(tempScriptDir, 'validate-fitness-mirror.mjs'));
+cpSync(resolve(repoRoot, 'dist'), resolve(tempRoot, 'dist'), { recursive: true });
+copyFileSync(resolve(repoRoot, 'examples/fitness-app.lifeline.yml'), resolve(tempExamplesDir, 'fitness-app.lifeline.yml'));
+
 const corruptedMirror = [
   'name: fitness-mirror',
   'archetype: node-web',
@@ -55,9 +71,12 @@ const corruptedMirror = [
 ].join('\n');
 
 try {
-  writeFileSync(mirrorPath, corruptedMirror, 'utf8');
+  const tempMirrorPath = resolve(tempExamplesDir, 'fitness-app.lifeline.yml');
+  const originalMirror = readFileSync(tempMirrorPath, 'utf8');
+  assert(originalMirror.includes('name: fitness'), 'expected baseline temp mirror to be canonical before corruption');
+  writeFileSync(tempMirrorPath, corruptedMirror, 'utf8');
 
-  const failureRun = runNode([scriptRelativePath], repoRoot);
+  const failureRun = runNode([resolve(tempScriptDir, 'validate-fitness-mirror.mjs')], mkdtempSync(resolve(tmpdir(), 'lifeline-validate-fitness-failure-cwd-')));
   assert(failureRun.status === 1, `failure run should exit 1:\n${failureRun.stdout}\n${failureRun.stderr}`);
   assert(failureRun.stdout === '', `failure run should not write stdout:\n${failureRun.stdout}`);
 
@@ -76,7 +95,7 @@ try {
     ].join('\n'),
   );
 } finally {
-  writeFileSync(mirrorPath, originalMirror, 'utf8');
+  rmSync(tempRoot, { recursive: true, force: true });
 }
 
 console.log('validate-fitness-mirror script deterministic checks passed');
