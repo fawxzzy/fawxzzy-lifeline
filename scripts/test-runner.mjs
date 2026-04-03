@@ -1,9 +1,11 @@
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import process from "node:process";
 import { spawn } from "node:child_process";
 
 const suitesFile = new URL("./test-suites.json", import.meta.url);
+const scriptsDirectory = fileURLToPath(new URL("./", import.meta.url));
 
 function usage(suites) {
   const available = [...suites, "all"].join(", ");
@@ -13,7 +15,8 @@ function usage(suites) {
 
 function runScript(fileName) {
   return new Promise((resolve) => {
-    const child = spawn("node", [path.join("scripts", fileName)], {
+    const absoluteScriptPath = path.join(scriptsDirectory, fileName);
+    const child = spawn("node", [absoluteScriptPath], {
       stdio: "inherit",
       env: process.env,
     });
@@ -49,24 +52,16 @@ async function loadSuites() {
 }
 
 async function runSuite(suiteName, scripts) {
-  let failures = 0;
-  let lastCode = 0;
-
   console.log(`\n==> suite:${suiteName} (${scripts.length} script${scripts.length === 1 ? "" : "s"})`);
 
   for (const fileName of scripts) {
     console.log(`\n--> ${fileName}`);
     const code = await runScript(fileName);
     if (code !== 0) {
-      failures += 1;
-      lastCode = code;
       console.error(`✖ ${fileName} failed with exit code ${code}`);
+      console.error(`\nSuite "${suiteName}" failed.`);
+      return code;
     }
-  }
-
-  if (failures > 0) {
-    console.error(`\nSuite "${suiteName}" completed with ${failures} failure(s).`);
-    return lastCode || 1;
   }
 
   console.log(`\nSuite "${suiteName}" passed.`);
@@ -74,7 +69,7 @@ async function runSuite(suiteName, scripts) {
 }
 
 const suites = await loadSuites();
-const suiteNames = Object.keys(suites);
+const suiteNames = Object.keys(suites).sort((left, right) => left.localeCompare(right));
 const [, , command] = process.argv;
 
 if (!command) {
@@ -95,19 +90,11 @@ if (command !== "all" && !suites[command]) {
 
 const suitesToRun = command === "all" ? suiteNames : [command];
 
-let totalFailures = 0;
-let finalExitCode = 0;
 for (const suiteName of suitesToRun) {
   const code = await runSuite(suiteName, suites[suiteName]);
   if (code !== 0) {
-    totalFailures += 1;
-    finalExitCode = code;
+    process.exit(code);
   }
-}
-
-if (totalFailures > 0) {
-  console.error(`\n${totalFailures} suite(s) failed.`);
-  process.exit(finalExitCode || 1);
 }
 
 console.log("\nAll requested suites passed.");

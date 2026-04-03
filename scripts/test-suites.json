@@ -1,4 +1,18 @@
 {
+  "commands": [
+    "test-cli-dispatch-deterministic.mjs",
+    "test-cli-error-surfacing-deterministic.mjs",
+    "test-cli-playbook-option-deterministic.mjs",
+    "test-down-command-deterministic.mjs",
+    "test-logs-command-deterministic.mjs",
+    "test-resolve-command-deterministic.mjs",
+    "test-resolve-command-playbook-env-path-deterministic.mjs",
+    "test-restart-command-deterministic.mjs",
+    "test-restore-non-restorable-skip-message-deterministic.mjs",
+    "test-status-command-deterministic.mjs",
+    "test-up-command-deterministic.mjs",
+    "test-up-command-playbook-env-path-deterministic.mjs"
+  ],
   "contracts": [
     "test-app-manifest-contract-deterministic.mjs",
     "test-doc-manifest-contract-parity-deterministic.mjs",
@@ -31,20 +45,6 @@
     "test-startup-state-invalid-shape-deterministic.mjs",
     "test-supervisor-blocked-state-clears-listener-deterministic.mjs",
     "test-supervisor-blocked-state-clears-runtime-pids-deterministic.mjs"
-  ],
-  "commands": [
-    "test-cli-dispatch-deterministic.mjs",
-    "test-cli-error-surfacing-deterministic.mjs",
-    "test-cli-playbook-option-deterministic.mjs",
-    "test-down-command-deterministic.mjs",
-    "test-logs-command-deterministic.mjs",
-    "test-resolve-command-deterministic.mjs",
-    "test-resolve-command-playbook-env-path-deterministic.mjs",
-    "test-restart-command-deterministic.mjs",
-    "test-restore-non-restorable-skip-message-deterministic.mjs",
-    "test-status-command-deterministic.mjs",
-    "test-up-command-deterministic.mjs",
-    "test-up-command-playbook-env-path-deterministic.mjs"
   ],
   "utilities": [
     "test-direct-script-invocation-deterministic.mjs",

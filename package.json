@@ -25,6 +25,7 @@
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
     "smoke:playbook": "node scripts/smoke-playbook-resolution.mjs",
     "validate:fitness:mirror": "node scripts/validate-fitness-mirror.mjs",
+    "test:run": "node scripts/test-runner.mjs",
     "test:validate-boundaries": "node scripts/test-validate-boundaries.mjs",
     "smoke:runtime:missing-env": "node scripts/smoke-runtime-missing-env.mjs",
     "smoke:runtime:restart-never": "node scripts/smoke-runtime-restart-never.mjs",
@@ -74,8 +75,7 @@
     "smoke:runtime:up-invalid-playbook-export": "node scripts/smoke-runtime-up-invalid-playbook-export.mjs",
     "smoke:runtime:restore-invalid-playbook-export": "node scripts/smoke-runtime-restore-invalid-playbook-export.mjs",
     "smoke:runtime:restart-invalid-playbook-export": "node scripts/smoke-runtime-restart-invalid-playbook-export.mjs",
-    "smoke:run": "node scripts/smoke-runner.mjs",
-    "test:run": "node scripts/test-runner.mjs"
+    "smoke:run": "node scripts/smoke-runner.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
