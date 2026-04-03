@@ -21,6 +21,21 @@ function assertIncludesIssue(issues, expectedPath, expectedMessage) {
   );
 }
 
+function assertExactIssues(issues, expectedIssues) {
+  assert(
+    issues.length === expectedIssues.length,
+    [
+      `Expected ${expectedIssues.length} issues but received ${issues.length}`,
+      `Expected: ${JSON.stringify(expectedIssues, null, 2)}`,
+      `Actual: ${JSON.stringify(issues, null, 2)}`,
+    ].join('\n'),
+  );
+
+  for (const expectedIssue of expectedIssues) {
+    assertIncludesIssue(issues, expectedIssue.path, expectedIssue.message);
+  }
+}
+
 function makeValidManifest() {
   return {
     name: 'demo',
@@ -47,8 +62,15 @@ function makeValidManifest() {
 }
 
 const valid = validateAppManifest(makeValidManifest());
-assert(valid.issues.length === 0, `Expected valid manifest to have no issues: ${JSON.stringify(valid.issues)}`);
-assert(valid.manifest?.runtime.restartPolicy === 'on-failure', 'Expected valid manifest runtime.restartPolicy to be preserved.');
+assertExactIssues(valid.issues, []);
+assert(valid.manifest?.archetype === 'node-web', 'Expected supported node-web archetype to validate.');
+
+const alsoSupportedArchetype = validateAppManifest({
+  ...makeValidManifest(),
+  archetype: 'next-web',
+});
+assertExactIssues(alsoSupportedArchetype.issues, []);
+assert(alsoSupportedArchetype.manifest?.archetype === 'next-web', 'Expected supported next-web archetype to validate.');
 
 const unsupportedArchetype = validateAppManifest({
   ...makeValidManifest(),
@@ -62,7 +84,7 @@ const invalidHealthcheckPath = validateAppManifest({
 });
 assertIncludesIssue(invalidHealthcheckPath.issues, 'healthcheckPath', "must start with '/'");
 
-const invalidPorts = [0, 65536, 12.5];
+const invalidPorts = [0, 65536, 12.5, '4301'];
 for (const port of invalidPorts) {
   const result = validateAppManifest({ ...makeValidManifest(), port });
   assertIncludesIssue(result.issues, 'port', 'must be an integer between 1 and 65535');
@@ -76,6 +98,20 @@ const legacyRequired = validateAppManifest({
   },
 });
 assertIncludesIssue(legacyRequired.issues, 'env.required', 'has been renamed to env.requiredKeys');
+
+const requiredKeysPreferredOverLegacy = validateAppManifest({
+  ...makeValidManifest(),
+  env: {
+    mode: 'inline',
+    requiredKeys: ['CANONICAL'],
+    required: ['LEGACY_IGNORED'],
+  },
+});
+assertExactIssues(requiredKeysPreferredOverLegacy.issues, []);
+assert(
+  JSON.stringify(requiredKeysPreferredOverLegacy.manifest?.env.requiredKeys) === JSON.stringify(['CANONICAL']),
+  'Expected env.requiredKeys to win when both env.requiredKeys and env.required are provided.',
+);
 
 const invalidRequiredKeysShape = validateAppManifest({
   ...makeValidManifest(),
@@ -121,23 +157,44 @@ const invalidRuntimeRestorable = validateAppManifest({
 });
 assertIncludesIssue(invalidRuntimeRestorable.issues, 'runtime.restorable', 'must be a boolean');
 
+const runtimeStringBooleans = validateAppManifest({
+  ...makeValidManifest(),
+  runtime: {
+    restartPolicy: 'never',
+    restorable: 'false',
+  },
+});
+assertExactIssues(runtimeStringBooleans.issues, []);
+assert(runtimeStringBooleans.manifest?.runtime.restorable === false, 'Expected runtime.restorable string false to normalize.');
+
 const defaultedRuntime = validateAppManifest({
   ...makeValidManifest(),
   runtime: undefined,
 });
-assert(defaultedRuntime.issues.length === 0, `Expected runtime omission to default cleanly: ${JSON.stringify(defaultedRuntime.issues)}`);
+assertExactIssues(defaultedRuntime.issues, []);
 assert(defaultedRuntime.manifest?.runtime.restartPolicy === 'on-failure', 'Expected runtime.restartPolicy default when runtime is omitted.');
 assert(defaultedRuntime.manifest?.runtime.restorable === true, 'Expected runtime.restorable default when runtime is omitted.');
 
-const partialDefaults = validatePartialManifest({
+const partialDefaultsWithoutRunnableFields = validatePartialManifest({
+  runtime: {
+    restorable: 'false',
+  },
+});
+assertExactIssues(partialDefaultsWithoutRunnableFields.issues, []);
+assert(
+  partialDefaultsWithoutRunnableFields.manifest === undefined,
+  'Expected partial validation without runnable fields to report no issues and no runnable manifest payload.',
+);
+
+const partialDefaultsWithRunnableFields = validatePartialManifest({
   ...makeValidManifest(),
   runtime: {
     restorable: 'false',
   },
 });
-assert(partialDefaults.issues.length === 0, `Expected partial manifest to accept string booleans for runtime.restorable: ${JSON.stringify(partialDefaults.issues)}`);
-assert(partialDefaults.manifest?.runtime.restorable === false, 'Expected partial manifest runtime.restorable to normalize to false.');
-assert(partialDefaults.manifest?.runtime.restartPolicy === 'on-failure', 'Expected partial manifest runtime.restartPolicy default.');
+assertExactIssues(partialDefaultsWithRunnableFields.issues, []);
+assert(partialDefaultsWithRunnableFields.manifest?.runtime.restorable === false, 'Expected partial manifest runtime.restorable to normalize to false.');
+assert(partialDefaultsWithRunnableFields.manifest?.runtime.restartPolicy === 'on-failure', 'Expected partial manifest runtime.restartPolicy default.');
 
 const optionalDefaultsAlias = validateOptionalAppManifestDefaults({
   ...makeValidManifest(),
@@ -145,7 +202,7 @@ const optionalDefaultsAlias = validateOptionalAppManifestDefaults({
     restorable: 'true',
   },
 });
-assert(optionalDefaultsAlias.issues.length === 0, `Expected optional defaults alias to validate cleanly: ${JSON.stringify(optionalDefaultsAlias.issues)}`);
+assertExactIssues(optionalDefaultsAlias.issues, []);
 assert(optionalDefaultsAlias.manifest?.runtime.restorable === true, 'Expected optional defaults alias to normalize runtime.restorable true.');
 
 console.log('app-manifest contract deterministic checks passed');
