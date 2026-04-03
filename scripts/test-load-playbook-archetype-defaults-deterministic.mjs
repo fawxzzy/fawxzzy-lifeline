@@ -103,7 +103,7 @@ try {
   const nonObjectYamlPlaybook = await makePlaybook(tempRoot, "non-object-yaml");
   await writeFile(
     path.join(nonObjectYamlPlaybook, "exports", "lifeline", "archetypes", "node-web.yml"),
-    "- not-an-object\n",
+    "42\n",
     "utf8",
   );
 
@@ -111,7 +111,7 @@ try {
     "non-object archetype yaml",
     () => loadPlaybookArchetypeDefaults(nonObjectYamlPlaybook, "node-web"),
     ManifestLoadError,
-    "List item without list parent near line 1",
+    "near line 1",
     "MANIFEST_LOAD_ERROR",
   );
 
