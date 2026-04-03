@@ -6,30 +6,17 @@ function assert(condition, message) {
   }
 }
 
-function assertIncludesIssue(issues, expectedPath, expectedMessage) {
-  const match = issues.find((issue) => issue.path === expectedPath && issue.message === expectedMessage);
-  assert(
-    Boolean(match),
-    [
-      `Expected issue { path: ${expectedPath}, message: ${expectedMessage} }`,
-      `Actual issues: ${JSON.stringify(issues, null, 2)}`,
-    ].join('\n'),
-  );
-}
-
 function assertExactIssues(issues, expectedIssues) {
+  const actual = JSON.stringify(issues);
+  const expected = JSON.stringify(expectedIssues);
   assert(
-    issues.length === expectedIssues.length,
+    actual === expected,
     [
-      `Expected ${expectedIssues.length} issues but received ${issues.length}`,
+      'Issue mismatch.',
       `Expected: ${JSON.stringify(expectedIssues, null, 2)}`,
       `Actual: ${JSON.stringify(issues, null, 2)}`,
     ].join('\n'),
   );
-
-  for (const expectedIssue of expectedIssues) {
-    assertIncludesIssue(issues, expectedIssue.path, expectedIssue.message);
-  }
 }
 
 function makeValidMirror() {
@@ -44,21 +31,22 @@ function makeValidMirror() {
   };
 }
 
-const valid = validateFitnessMirrorManifest(makeValidMirror());
-assertExactIssues(valid, []);
+assertExactIssues(validateFitnessMirrorManifest(makeValidMirror()), []);
 
-const nonObject = validateFitnessMirrorManifest('not-an-object');
-assertExactIssues(nonObject, [{ path: '$', message: 'manifest must be a YAML object' }]);
+assertExactIssues(validateFitnessMirrorManifest('not-an-object'), [
+  { path: '$', message: 'manifest must be a YAML object' },
+]);
 
 const wrongTopLevelKeys = validateFitnessMirrorManifest({
   ...makeValidMirror(),
   runtime: { restorable: true },
 });
-assertIncludesIssue(
-  wrongTopLevelKeys,
-  '$',
-  'expected top-level keys: archetype, deploy, healthcheckPath, name, port',
-);
+assertExactIssues(wrongTopLevelKeys, [
+  {
+    path: '$',
+    message: 'expected top-level keys: archetype, deploy, healthcheckPath, name, port',
+  },
+]);
 
 const missingDeploy = validateFitnessMirrorManifest({
   name: 'fitness',
@@ -88,11 +76,20 @@ assertExactIssues(wrongFieldValues, [
   { path: 'healthcheckPath', message: "must equal '/login' for Fitness mirror boundary" },
 ]);
 
-const deployWrongType = validateFitnessMirrorManifest({
-  ...makeValidMirror(),
-  deploy: 'not-an-object',
+const wrongEverything = validateFitnessMirrorManifest({
+  name: 'x',
+  archetype: 'y',
+  port: 1,
+  healthcheckPath: '/',
+  deploy: null,
 });
-assertExactIssues(deployWrongType, [{ path: 'deploy', message: 'must be an object' }]);
+assertExactIssues(wrongEverything, [
+  { path: 'name', message: "must equal 'fitness' for Fitness mirror boundary" },
+  { path: 'archetype', message: "must equal 'node-web' for Fitness mirror boundary" },
+  { path: 'port', message: 'must equal 4301 for Fitness mirror boundary' },
+  { path: 'healthcheckPath', message: "must equal '/login' for Fitness mirror boundary" },
+  { path: 'deploy', message: 'must be an object' },
+]);
 
 const deployWrongKeys = validateFitnessMirrorManifest({
   ...makeValidMirror(),
