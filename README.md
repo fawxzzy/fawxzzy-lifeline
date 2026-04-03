@@ -189,20 +189,52 @@ pnpm test:startup-roundtrip
 
 CI uses the same canonical Playbook verification path: `pnpm smoke:playbook`.
 
-For targeted runtime smoke scenarios, prefer the deterministic smoke runner instead of adding new `package.json` script keys:
+### Smoke execution modes
+
+Use the smoke runners with distinct intent:
+
+- **Single-scenario runs (`scripts/smoke-runner.mjs`)** are for debugging and targeted repro.
+- **Suite runs (`scripts/smoke-suite-runner.mjs`)** are for grouped verification before merge/CI parity.
+
+For targeted runtime smoke scenarios, prefer the deterministic single-scenario runner instead of adding new `package.json` script keys:
 
 ```bash
 pnpm smoke:run runtime restore-invalid-manifest-shape
 pnpm smoke:run runtime restart-invalid-playbook-export
 ```
 
-The runner resolves files by `scripts/smoke-<mode>-<scenario>.mjs` naming convention. New runtime smoke coverage should usually be added as a new `scripts/smoke-runtime-<scenario>.mjs` file only.
+The single-scenario runner resolves files by `scripts/smoke-<mode>-<scenario>.mjs` naming convention. New runtime smoke coverage should usually be added as a new `scripts/smoke-runtime-<scenario>.mjs` file only.
+
+For grouped smoke verification, use the suite runner:
+
+```bash
+node scripts/smoke-suite-runner.mjs list
+node scripts/smoke-suite-runner.mjs playbook
+node scripts/smoke-suite-runner.mjs runtime
+node scripts/smoke-suite-runner.mjs all
+```
+
+Available smoke suites are sourced from `scripts/smoke-suites.json`:
+
+- `playbook`: Playbook-backed resolution verification suite.
+- `runtime`: Runtime lifecycle and failure-path verification suite.
 
 All smoke scripts invoke the canonical local Lifeline CLI entrypoint (`node dist/cli.js`) and therefore require `pnpm build` beforehand so `dist/cli.js` exists.
 
 ## Deterministic suite structure
 
 Testing structure is documented in [`docs/testing.md`](docs/testing.md), with deterministic suites sourced from `scripts/test-suites.json` and executed via `scripts/test-runner.mjs`.
+
+Smoke suites complement (not replace) deterministic test suites:
+
+- Smoke suites (`scripts/smoke-suites.json` + `scripts/smoke-suite-runner.mjs`) group end-to-end CLI behavior checks.
+- Deterministic test suites (`scripts/test-suites.json` + `scripts/test-runner.mjs`) group repeatable contract/test coverage.
+
+### Smoke suite docs summary
+
+- **Rule:** Grouped smoke execution should be discoverable from the repository, not tribal knowledge.
+- **Pattern:** Use the single-scenario runner for debugging and the suite runner for grouped verification.
+- **Failure Mode:** Without docs parity, suites exist but contributors keep relying on brittle one-off smoke commands.
 
 ## Early target manifests
 
