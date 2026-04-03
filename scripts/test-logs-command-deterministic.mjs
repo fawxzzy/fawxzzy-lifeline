@@ -134,6 +134,10 @@ try {
     JSON.stringify(tailedOutput) === JSON.stringify(["[line-04] delta", "[line-05] echo"]),
     `existing-log-file: expected only last two lines, got ${JSON.stringify(tailedOutput)}`,
   );
+  assert(
+    tailedLogs.stdout === "[line-04] delta\n[line-05] echo\n",
+    `existing-log-file: expected deterministic stdout contract, got ${JSON.stringify(tailedLogs.stdout)}`,
+  );
 
   console.log("logs command deterministic verification passed.");
 } finally {

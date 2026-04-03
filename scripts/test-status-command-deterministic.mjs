@@ -226,6 +226,11 @@ try {
   assert(stoppedResult.stderr.trim() === "", `stopped: expected empty stderr, got ${JSON.stringify(stoppedResult.stderr)}`);
   assert(stoppedResult.stdout.includes(`App ${stoppedApp} is stopped.`), "stopped: missing status summary line");
   assert(stoppedResult.stdout.includes("- supervisor: stopped"), "stopped: missing supervisor line");
+  assert(stoppedResult.stdout.includes("- portOwner: none"), "stopped: missing portOwner none line");
+  assert(
+    stoppedResult.stdout.includes(`- healthcheck: http://127.0.0.1:${stoppedPort}/healthz`),
+    "stopped: missing healthcheck summary line",
+  );
   assert(stoppedResult.stdout.includes("- health: managed app process not running"), "stopped: missing health line");
 
   const runningApp = "status-running-deterministic";
@@ -248,6 +253,10 @@ try {
   assert(runningResult.code === 0, `running: expected exit 0, got ${runningResult.code}`);
   assert(runningResult.stderr.trim() === "", `running: expected empty stderr, got ${JSON.stringify(runningResult.stderr)}`);
   assert(runningResult.stdout.includes(`App ${runningApp} is running.`), "running: missing status line");
+  assert(
+    runningResult.stdout.includes(`- supervisor: alive (pid ${process.pid})`),
+    "running: missing supervisor-alive summary",
+  );
   assert(runningResult.stdout.includes(`- port: ${runningPort}`), "running: missing port line");
   assert(runningResult.stdout.includes("- health: ok (200)"), "running: missing health line");
   assert(runningResult.stdout.includes(`- portOwner: pid ${runningServer.pid}`), "running: missing portOwner line");
@@ -273,6 +282,10 @@ try {
   assert(blockedResult.code === 1, `blocked: expected non-zero exit, got ${blockedResult.code}`);
   assert(blockedResult.stderr.trim() === "", `blocked: expected empty stderr, got ${JSON.stringify(blockedResult.stderr)}`);
   assert(blockedResult.stdout.includes(`App ${blockedApp} is blocked.`), "blocked: missing status line");
+  assert(
+    blockedResult.stdout.includes(`- supervisor: stopped (pid ${deadSupervisorPid})`),
+    "blocked: missing supervisor stopped summary",
+  );
   assert(
     blockedResult.stdout.includes(`- blockedReason: port ${blockedPort} occupied by pid ${blockedServer.pid}`),
     "blocked: missing blockedReason summary",
