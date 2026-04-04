@@ -238,6 +238,12 @@ Smoke suites complement (not replace) deterministic test suites:
 - **Pattern:** Use the single-scenario runner for debugging and the suite runner for grouped verification.
 - **Failure Mode:** Without docs parity, suites exist but contributors keep relying on brittle one-off smoke commands.
 
+### Directly-invoked helper script contract
+
+- **Rule:** Any new directly-invokable helper script must be added to the deterministic invocation contract in the same PR.
+- **Pattern:** Helper-script surface is explicit and fail-closed, not inferred loosely.
+- **Failure Mode:** Adding helper scripts without updating invocation-boundary tests causes deterministic CI drift.
+
 ## CI toolchain install hardening
 
 - **Rule:** CI test environments must install native optional toolchain packages required by transform-based test runners.
