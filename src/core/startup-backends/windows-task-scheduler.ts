@@ -117,7 +117,7 @@ async function inspectTask(
   };
 }
 
-function buildCreateTaskArgs(): string[] {
+function buildCreateTaskArgs(restoreEntrypoint: string): string[] {
   return [
     "/Create",
     "/TN",
@@ -125,7 +125,7 @@ function buildCreateTaskArgs(): string[] {
     "/SC",
     "ONLOGON",
     "/TR",
-    RESTORE_ENTRYPOINT,
+    restoreEntrypoint,
     "/F",
   ];
 }
@@ -147,7 +147,7 @@ export function createWindowsTaskSchedulerBackend(
         };
       }
 
-      const createResult = await runner(buildCreateTaskArgs());
+      const createResult = await runner(buildCreateTaskArgs(request.restoreEntrypoint));
       if (isSchedulerUnavailable(createResult)) {
         return {
           status: "unsupported",

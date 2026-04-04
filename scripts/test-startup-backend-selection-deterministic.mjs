@@ -88,7 +88,16 @@ async function verifyRegistrySelectionAndFallback() {
 }
 
 async function main() {
-  await verifyUnsupportedDefaultSelection('win32');
+  const windowsDefault = resolveStartupBackend({ platform: 'win32' });
+  const windowsInspection = await windowsDefault.inspect();
+  assert(
+    windowsDefault.id === 'windows-task-scheduler',
+    `Expected Windows default backend id windows-task-scheduler, got ${windowsDefault.id}.`,
+  );
+  assert(
+    windowsInspection.mechanism === 'windows-task-scheduler',
+    `Expected Windows mechanism windows-task-scheduler, got ${windowsInspection.mechanism}.`,
+  );
   await verifyUnsupportedDefaultSelection('linux');
   await verifyUnsupportedDefaultSelection('darwin');
   await verifyInjectedBackendSelection();
