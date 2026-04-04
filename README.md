@@ -329,4 +329,4 @@ Expected interaction with `restore` stays explicit: startup registration contrac
 
 ## Wave 1 notes
 
-Wave 1 added a supervisor-backed lifecycle plus restore semantics. Wave 2 currently adds a startup contract and CLI surface, with platform-specific installers deferred behind that seam.
+Wave 1 added a supervisor-backed lifecycle plus restore semantics. Wave 2 now includes both the startup contract/CLI surface and default `win32` Task Scheduler backend wiring; remaining deferred installers are Linux/macOS backends behind the same seam.
