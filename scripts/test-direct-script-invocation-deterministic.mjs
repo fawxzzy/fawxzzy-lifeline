@@ -25,39 +25,48 @@ const directlyInvokedHelpers = readdirSync(resolve(repoRoot, 'scripts'))
   .filter((name) => name.endsWith('.mjs'))
   .filter((name) => !name.startsWith('test-'))
   .filter((name) => !name.startsWith('smoke-'))
-  .filter((name) => name !== 'lib');
+  .filter((name) => name !== 'lib')
+  .sort();
+
+const expectedDirectlyInvokedHelpers = [
+  'validate-fitness-mirror.mjs',
+  'verify-esbuild-install.mjs',
+];
 
 assert(
-  directlyInvokedHelpers.length === 1 && directlyInvokedHelpers[0] === 'validate-fitness-mirror.mjs',
+  JSON.stringify(directlyInvokedHelpers) === JSON.stringify(expectedDirectlyInvokedHelpers),
   `unexpected directly-invoked helper set: ${JSON.stringify(directlyInvokedHelpers)}`,
 );
 
-const relativeScriptPath = 'scripts/validate-fitness-mirror.mjs';
-const absoluteScriptPath = resolve(repoRoot, relativeScriptPath);
-
-const relativeRun = runNode([relativeScriptPath], repoRoot);
 const externalCwd = mkdtempSync(resolve(tmpdir(), 'lifeline-direct-script-parity-'));
-const absoluteRun = runNode([absoluteScriptPath], externalCwd);
 
-assert(relativeRun.status === 0, `relative invocation failed:\n${relativeRun.stdout}\n${relativeRun.stderr}`);
-assert(absoluteRun.status === 0, `absolute invocation failed:\n${absoluteRun.stdout}\n${absoluteRun.stderr}`);
+for (const helper of expectedDirectlyInvokedHelpers) {
+  const relativeScriptPath = `scripts/${helper}`;
+  const absoluteScriptPath = resolve(repoRoot, relativeScriptPath);
 
-assert(
-  relativeRun.stdout === absoluteRun.stdout,
-  [
-    'direct invocation stdout mismatch',
-    `relative: ${JSON.stringify(relativeRun.stdout)}`,
-    `absolute: ${JSON.stringify(absoluteRun.stdout)}`,
-  ].join('\n'),
-);
-assert(
-  relativeRun.stderr === absoluteRun.stderr,
-  [
-    'direct invocation stderr mismatch',
-    `relative: ${JSON.stringify(relativeRun.stderr)}`,
-    `absolute: ${JSON.stringify(absoluteRun.stderr)}`,
-  ].join('\n'),
-);
+  const relativeRun = runNode([relativeScriptPath], repoRoot);
+  const absoluteRun = runNode([absoluteScriptPath], externalCwd);
+
+  assert(relativeRun.status === 0, `relative invocation failed for ${helper}:\n${relativeRun.stdout}\n${relativeRun.stderr}`);
+  assert(absoluteRun.status === 0, `absolute invocation failed for ${helper}:\n${absoluteRun.stdout}\n${absoluteRun.stderr}`);
+
+  assert(
+    relativeRun.stdout === absoluteRun.stdout,
+    [
+      `direct invocation stdout mismatch for ${helper}`,
+      `relative: ${JSON.stringify(relativeRun.stdout)}`,
+      `absolute: ${JSON.stringify(absoluteRun.stdout)}`,
+    ].join('\n'),
+  );
+  assert(
+    relativeRun.stderr === absoluteRun.stderr,
+    [
+      `direct invocation stderr mismatch for ${helper}`,
+      `relative: ${JSON.stringify(relativeRun.stderr)}`,
+      `absolute: ${JSON.stringify(absoluteRun.stderr)}`,
+    ].join('\n'),
+  );
+}
 
 
 const runnerRelativePath = 'scripts/smoke-runner.mjs';
