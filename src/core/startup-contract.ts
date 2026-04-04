@@ -171,15 +171,19 @@ export async function getStartupStatus(
 ): Promise<StartupStatus> {
   const state = await readStartupState();
   const inspection = await backend.inspect();
+  const backendEnabled = inspection.status === "installed";
+  const intentEnabled = state.intent === "enabled";
+  const intentDetail =
+    intentEnabled === backendEnabled
+      ? `Startup intent is ${state.intent} in Lifeline state.`
+      : `Startup intent is ${state.intent} in Lifeline state but backend inspection is ${inspection.status}.`;
+
   return {
     supported: inspection.supported,
-    enabled: state.intent === "enabled",
+    enabled: backendEnabled,
     backendStatus: inspection.status,
     mechanism: inspection.mechanism,
-    detail:
-      state.intent === "enabled"
-        ? `Startup intent is enabled in Lifeline state. ${inspection.detail}`
-        : `Startup intent is disabled in Lifeline state. ${inspection.detail}`,
+    detail: `${intentDetail} ${inspection.detail}`,
     scope: state.scope,
     restoreEntrypoint: state.restoreEntrypoint,
   };

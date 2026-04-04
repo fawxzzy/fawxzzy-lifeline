@@ -4,7 +4,7 @@ import {
   planStartupAction,
   setStartupIntent,
 } from "../core/startup-contract.js";
-import { resolveStartupBackend } from "../core/startup-backend.js";
+import { resolveStartupBackend, type StartupBackend } from "../core/startup-backend.js";
 
 function printStatus(backend = resolveStartupBackend()): Promise<number> {
   return getStartupStatus(backend).then((status) => {
@@ -22,6 +22,7 @@ function printStatus(backend = resolveStartupBackend()): Promise<number> {
 export async function runStartupCommand(
   action: string | undefined,
   option: string | undefined,
+  backend: StartupBackend = resolveStartupBackend(),
 ): Promise<number> {
   if (!action) {
     console.error("Missing startup action. Use one of: enable, disable, status.");
@@ -29,7 +30,6 @@ export async function runStartupCommand(
   }
 
   const dryRun = option === "--dry-run";
-  const backend = resolveStartupBackend();
   if (option && !dryRun) {
     console.error(`Unknown startup option: ${option}. Only --dry-run is supported.`);
     return 1;
