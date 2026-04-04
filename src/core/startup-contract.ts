@@ -34,6 +34,18 @@ function buildStartupRequest(dryRun: boolean) {
   };
 }
 
+function buildStartupStatusDetail(intent: StartupIntent, backendStatus: StartupBackendStatus, backendDetail: string) {
+  const intentMatchesBackend =
+    (intent === "enabled" && backendStatus === "installed") ||
+    (intent === "disabled" && backendStatus !== "installed");
+
+  const intentDetail = intentMatchesBackend
+    ? `Startup intent is ${intent} in Lifeline state.`
+    : `Startup intent is ${intent} in Lifeline state but backend inspection is ${backendStatus}.`;
+
+  return `${intentDetail} ${backendDetail}`;
+}
+
 interface StartupState {
   version: 1;
   scope: "machine-local";
@@ -172,18 +184,13 @@ export async function getStartupStatus(
   const state = await readStartupState();
   const inspection = await backend.inspect();
   const backendEnabled = inspection.status === "installed";
-  const intentEnabled = state.intent === "enabled";
-  const intentDetail =
-    intentEnabled === backendEnabled
-      ? `Startup intent is ${state.intent} in Lifeline state.`
-      : `Startup intent is ${state.intent} in Lifeline state but backend inspection is ${inspection.status}.`;
 
   return {
     supported: inspection.supported,
     enabled: backendEnabled,
     backendStatus: inspection.status,
     mechanism: inspection.mechanism,
-    detail: `${intentDetail} ${inspection.detail}`,
+    detail: buildStartupStatusDetail(state.intent, inspection.status, inspection.detail),
     scope: state.scope,
     restoreEntrypoint: state.restoreEntrypoint,
   };

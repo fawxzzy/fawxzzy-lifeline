@@ -141,9 +141,13 @@ export function createWindowsTaskSchedulerBackend(
       request: StartupBackendRequest,
     ): Promise<StartupBackendResult> => {
       if (request.dryRun) {
+        const inspection = await inspectTask(runner);
         return {
-          status: "not-installed",
-          detail: `Dry-run: would register Windows Task Scheduler task ${TASK_NAME} to run ${request.restoreEntrypoint} on user logon.`,
+          status: inspection.status === "unsupported" ? "unsupported" : inspection.status,
+          detail:
+            inspection.status === "installed"
+              ? `Dry-run: task ${TASK_NAME} is already registered for ${request.restoreEntrypoint}; no mutation required.`
+              : `Dry-run: would register Windows Task Scheduler task ${TASK_NAME} to run ${request.restoreEntrypoint} on user logon.`,
         };
       }
 
@@ -176,9 +180,13 @@ export function createWindowsTaskSchedulerBackend(
       request: StartupBackendRequest,
     ): Promise<StartupBackendResult> => {
       if (request.dryRun) {
+        const inspection = await inspectTask(runner);
         return {
-          status: "not-installed",
-          detail: `Dry-run: would remove Windows Task Scheduler task ${TASK_NAME} if present.`,
+          status: inspection.status === "unsupported" ? "unsupported" : inspection.status,
+          detail:
+            inspection.status === "installed"
+              ? `Dry-run: would remove Windows Task Scheduler task ${TASK_NAME}.`
+              : `Dry-run: task ${TASK_NAME} is not present; no mutation required.`,
         };
       }
 
