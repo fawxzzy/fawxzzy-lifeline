@@ -70,6 +70,10 @@ async function main() {
   assert(statusAfterEnable.stdout.includes('Startup enabled: yes'), 'Expected enabled status after enable.');
   assert(statusAfterEnable.stdout.includes('Startup supported: no'), 'Expected unsupported backend status to be explicit.');
   assert(
+    statusAfterEnable.stdout.includes('Startup backend status: unsupported'),
+    'Expected status output to include backend installation status.',
+  );
+  assert(
     statusAfterEnable.stdout.includes('- mechanism: contract-only'),
     'Expected status mechanism to remain contract-only when backend is unsupported.',
   );
@@ -120,6 +124,10 @@ async function main() {
   const statusAfterDisable = await runLifeline(tempDir, 'startup', 'status');
   assert(statusAfterDisable.code === 0, 'Expected startup status after disable to succeed.');
   assert(statusAfterDisable.stdout.includes('Startup enabled: no'), 'Expected disabled status after disable.');
+  assert(
+    statusAfterDisable.stdout.includes('Startup backend status: unsupported'),
+    'Expected status output to include backend installation status after disable.',
+  );
 
   const statusDryRun = await runLifeline(tempDir, 'startup', 'status', '--dry-run');
   assert(
