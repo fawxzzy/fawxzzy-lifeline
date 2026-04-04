@@ -41,6 +41,7 @@ async function verifyRestoreEntrypointWiring() {
 async function verifyContractSurfaceWiring() {
   const startupCommandSource = await readFile(new URL('../src/commands/startup.ts', import.meta.url), 'utf8');
   const startupCoreSource = await readFile(new URL('../src/core/startup-contract.ts', import.meta.url), 'utf8');
+  const startupBackendSource = await readFile(new URL('../src/core/startup-backend.ts', import.meta.url), 'utf8');
 
   assert(
     startupCommandSource.includes('--dry-run'),
@@ -48,8 +49,18 @@ async function verifyContractSurfaceWiring() {
   );
 
   assert(
-    startupCoreSource.includes('mechanism: "contract-only"'),
-    'Expected startup core status to stay platform-neutral with contract-only mechanism.',
+    startupCoreSource.includes('resolveStartupBackend'),
+    'Expected startup core to route planning/status through startup backend resolution.',
+  );
+
+  assert(
+    startupCommandSource.includes('backend.install') && startupCommandSource.includes('backend.uninstall'),
+    'Expected startup command to wire enable/disable through backend install and uninstall calls.',
+  );
+
+  assert(
+    startupBackendSource.includes('status: "unsupported"'),
+    'Expected default startup backend to report unsupported status cleanly.',
   );
 
   assert(

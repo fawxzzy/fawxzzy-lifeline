@@ -120,7 +120,10 @@ if (recoveredStartupState.restoreEntrypoint !== "lifeline restore") {
   );
 }
 
-if (recoveredStartupState.backendStatus !== "not-installed") {
+if (
+  recoveredStartupState.backendStatus !== "not-installed" &&
+  recoveredStartupState.backendStatus !== "unsupported"
+) {
   throw new Error(
     `Expected backendStatus canonicalization after recovery.\nstate:\n${rawRecoveredStartupState}`,
   );

@@ -3,6 +3,7 @@ import {
   planStartupAction,
   setStartupIntent,
 } from "../core/startup-contract.js";
+import { resolveStartupBackend } from "../core/startup-backend.js";
 
 function printStatus(): Promise<number> {
   return getStartupStatus().then((status) => {
@@ -42,9 +43,15 @@ export async function runStartupCommand(
       return 0;
     }
 
-    await setStartupIntent("enabled");
+    const backend = resolveStartupBackend();
+    const backendResult = await backend.install({
+      scope: plan.scope,
+      restoreEntrypoint: plan.restoreEntrypoint,
+      dryRun: false,
+    });
+    await setStartupIntent("enabled", backendResult.status);
     console.log("Startup intent enabled.");
-    console.log("Platform-specific installer backends are not implemented yet.");
+    console.log(backendResult.detail);
     return printStatus();
   }
 
@@ -59,8 +66,15 @@ export async function runStartupCommand(
       return 0;
     }
 
-    await setStartupIntent("disabled");
+    const backend = resolveStartupBackend();
+    const backendResult = await backend.uninstall({
+      scope: plan.scope,
+      restoreEntrypoint: plan.restoreEntrypoint,
+      dryRun: false,
+    });
+    await setStartupIntent("disabled", backendResult.status);
     console.log("Startup intent disabled.");
+    console.log(backendResult.detail);
     return printStatus();
   }
 

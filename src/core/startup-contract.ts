@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveStartupBackend, type StartupBackendStatus } from "./startup-backend.js";
 
 export type StartupIntent = "enabled" | "disabled";
 
@@ -16,7 +17,7 @@ export interface StartupPlan {
   action: "enable" | "disable";
   scope: "machine-local";
   restoreEntrypoint: "lifeline restore";
-  backendStatus: "not-installed";
+  backendStatus: StartupBackendStatus;
   detail: string;
 }
 
@@ -25,7 +26,7 @@ interface StartupState {
   scope: "machine-local";
   restoreEntrypoint: "lifeline restore";
   intent: StartupIntent;
-  backendStatus: "not-installed";
+  backendStatus: StartupBackendStatus;
   updatedAt: string;
 }
 
@@ -59,6 +60,14 @@ function sanitizeUpdatedAt(value: unknown): string {
   return new Date().toISOString();
 }
 
+function sanitizeBackendStatus(value: unknown): StartupBackendStatus {
+  if (value === "installed" || value === "unsupported" || value === "not-installed") {
+    return value;
+  }
+
+  return "not-installed";
+}
+
 async function readStartupState(): Promise<StartupState> {
   const raw = await readFile(STARTUP_STATE_PATH, "utf8").catch(() => "");
   if (!raw) {
@@ -80,7 +89,7 @@ async function readStartupState(): Promise<StartupState> {
     version: 1,
     scope: "machine-local",
     restoreEntrypoint: "lifeline restore",
-    backendStatus: "not-installed",
+    backendStatus: sanitizeBackendStatus(parsed.backendStatus),
     intent: sanitizeIntent(parsed.intent),
     updatedAt: sanitizeUpdatedAt(parsed.updatedAt),
   };
@@ -113,37 +122,46 @@ async function writeStartupState(state: StartupState): Promise<void> {
 export async function planStartupAction(
   action: "enable" | "disable",
 ): Promise<StartupPlan> {
+  const backend = resolveStartupBackend();
+  const inspection = await backend.inspect();
+
   return {
     action,
     scope: "machine-local",
     restoreEntrypoint: "lifeline restore",
-    backendStatus: "not-installed",
+    backendStatus: inspection.status,
     detail:
       action === "enable"
-        ? "Contract intent will be recorded. Platform installer backends are not implemented yet."
-        : "Contract intent will be cleared. Platform installer backends are not implemented yet.",
+        ? inspection.detail
+        : `${inspection.detail} Disable keeps contract intent aligned even when no backend is installed.`,
   };
 }
 
-export async function setStartupIntent(intent: StartupIntent): Promise<void> {
+export async function setStartupIntent(
+  intent: StartupIntent,
+  backendStatus: StartupBackendStatus = "not-installed",
+): Promise<void> {
   const current = await readStartupState();
   await writeStartupState({
     ...current,
     intent,
+    backendStatus,
     updatedAt: new Date().toISOString(),
   });
 }
 
 export async function getStartupStatus(): Promise<StartupStatus> {
   const state = await readStartupState();
+  const backend = resolveStartupBackend();
+  const inspection = await backend.inspect();
   return {
-    supported: false,
+    supported: inspection.supported,
     enabled: state.intent === "enabled",
-    mechanism: "contract-only",
+    mechanism: inspection.mechanism,
     detail:
       state.intent === "enabled"
-        ? "Startup intent is enabled in Lifeline state, but no OS installer backend is installed yet."
-        : "Startup intent is disabled in Lifeline state.",
+        ? `Startup intent is enabled in Lifeline state. ${inspection.detail}`
+        : `Startup intent is disabled in Lifeline state. ${inspection.detail}`,
     scope: state.scope,
     restoreEntrypoint: state.restoreEntrypoint,
   };
