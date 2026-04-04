@@ -67,7 +67,10 @@ async function main() {
 
   const statusAfterEnable = await runLifeline(tempDir, 'startup', 'status');
   assert(statusAfterEnable.code === 0, 'Expected startup status after enable to succeed.');
-  assert(statusAfterEnable.stdout.includes('Startup enabled: yes'), 'Expected enabled status after enable.');
+  assert(
+    statusAfterEnable.stdout.includes('Startup enabled: no'),
+    'Expected backend-derived enabled status to remain no when backend is unsupported.',
+  );
   assert(statusAfterEnable.stdout.includes('Startup supported: no'), 'Expected unsupported backend status to be explicit.');
   assert(
     statusAfterEnable.stdout.includes('Startup backend status: unsupported'),

@@ -45,7 +45,10 @@ async function main() {
   );
 
   const statusOutput = await runLifeline(tempDir, 'startup', 'status');
-  assert(statusOutput.includes('Startup enabled: yes'), 'Expected startup status to report enabled.');
+  assert(
+    statusOutput.includes('Startup enabled: no'),
+    'Expected startup status to reflect backend installed/not-installed readiness.',
+  );
   assert(
     statusOutput.includes('- restore entrypoint: lifeline restore'),
     'Expected startup status restore entrypoint to remain canonical.',
