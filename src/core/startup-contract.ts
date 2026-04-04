@@ -11,6 +11,7 @@ export type StartupIntent = "enabled" | "disabled";
 export interface StartupStatus {
   supported: boolean;
   enabled: boolean;
+  backendStatus: StartupBackendStatus;
   mechanism: string;
   detail: string;
   scope: "machine-local";
@@ -173,6 +174,7 @@ export async function getStartupStatus(
   return {
     supported: inspection.supported,
     enabled: state.intent === "enabled",
+    backendStatus: inspection.status,
     mechanism: inspection.mechanism,
     detail:
       state.intent === "enabled"

@@ -190,7 +190,7 @@ async function verifyUnsupportedBackendPath() {
   await ensureBuiltCli();
   const startupBackendModule = await import(new URL('../dist/core/startup-backend.js', import.meta.url));
   const { resolveStartupBackend } = startupBackendModule;
-  const backend = resolveStartupBackend({ platform: 'win32' });
+  const backend = resolveStartupBackend({ platform: 'linux' });
   const inspection = await backend.inspect();
   const installResult = await backend.install({
     scope: 'machine-local',
@@ -198,10 +198,10 @@ async function verifyUnsupportedBackendPath() {
     dryRun: false,
   });
 
-  assert(inspection.supported === false, 'Expected win32 unsupported backend path to report supported=false.');
+  assert(inspection.supported === false, 'Expected linux unsupported backend path to report supported=false.');
   assert(inspection.mechanism === 'contract-only', `Expected contract-only mechanism, got ${inspection.mechanism}.`);
   assert(
-    inspection.detail.includes('No startup installer backend is available on win32 yet.'),
+    inspection.detail.includes('No startup installer backend is available on linux yet.'),
     `Expected unsupported inspection detail to be explicit, got: ${inspection.detail}`,
   );
   assert(

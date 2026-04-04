@@ -10,6 +10,7 @@ function printStatus(backend = resolveStartupBackend()): Promise<number> {
   return getStartupStatus(backend).then((status) => {
     console.log(`Startup supported: ${status.supported ? "yes" : "no"}`);
     console.log(`Startup enabled: ${status.enabled ? "yes" : "no"}`);
+    console.log(`Startup backend status: ${status.backendStatus}`);
     console.log(`- mechanism: ${status.mechanism}`);
     console.log(`- scope: ${status.scope}`);
     console.log(`- restore entrypoint: ${status.restoreEntrypoint}`);
