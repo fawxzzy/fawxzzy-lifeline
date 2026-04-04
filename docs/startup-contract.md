@@ -97,4 +97,4 @@ No platform-specific registration identifiers are persisted in this slice.
 
 Future platform installers must plug into this contract, not bypass it. Backends should read the contract intent and apply OS-specific wiring while preserving the contract's machine-local scope and restore-entrypoint target.
 
-Remaining deferred startup installers are Linux/macOS platform backends (for example, `systemd` and `launchd`).
+Current shipped installer coverage is `win32` via Task Scheduler; remaining deferred startup installers are Linux/macOS platform backends (for example, `systemd` and `launchd`).
