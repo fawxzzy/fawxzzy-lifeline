@@ -1,3 +1,5 @@
+import { createWindowsTaskSchedulerBackend } from "./startup-backends/windows-task-scheduler.js";
+
 export type StartupBackendStatus = "installed" | "not-installed" | "unsupported";
 export type RuntimePlatform = string;
 export type StartupBackendCapability = "inspect" | "install" | "uninstall";
@@ -33,6 +35,12 @@ type StartupBackendFactory = () => StartupBackend;
 export interface StartupBackendRegistry {
   byPlatform: Partial<Record<RuntimePlatform, StartupBackendFactory>>;
 }
+
+const DEFAULT_STARTUP_BACKEND_REGISTRY: StartupBackendRegistry = {
+  byPlatform: {
+    win32: () => createWindowsTaskSchedulerBackend(),
+  },
+};
 
 function createUnsupportedBackend(platform: RuntimePlatform): StartupBackend {
   const detail = `No startup installer backend is available on ${platform} yet.`;
@@ -72,7 +80,8 @@ export function resolveStartupBackend(options: StartupBackendResolutionOptions =
   }
 
   const platform = options.platform ?? process.platform;
-  const backendFactory = options.registry?.byPlatform[platform];
+  const registry = options.registry ?? DEFAULT_STARTUP_BACKEND_REGISTRY;
+  const backendFactory = registry.byPlatform[platform];
   if (backendFactory) {
     return backendFactory();
   }
