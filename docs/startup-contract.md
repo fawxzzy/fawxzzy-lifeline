@@ -1,6 +1,6 @@
 # Startup contract (merged Wave 2)
 
-Merged Wave 2 defines Lifeline's startup-registration seam and deterministic CLI/state behavior before any platform installers are implemented. This document tracks the contract surface only; backend installers remain deferred until each platform backend lands behind the same seam.
+Merged Wave 2 defines Lifeline's startup-registration seam and deterministic CLI/state behavior. This document tracks the contract boundary and current runtime behavior, including the current Windows fallback path.
 
 ## Scope
 
@@ -25,26 +25,43 @@ Semantics:
 
 The contract's canonical startup target is always `lifeline restore`; startup backends must reuse this entrypoint and must not introduce duplicate lifecycle logic.
 
+Status output shape (deterministic):
+
+```text
+Startup supported: <yes|no>
+Startup enabled: <yes|no>
+- mechanism: <backend mechanism>
+- scope: machine-local
+- restore entrypoint: lifeline restore
+- detail: <backend/status detail>
+```
 
 ## Contract-only vs real backend status
 
-Current status is **contract-only**. That means:
+Current default runtime status is **contract-only**. That means:
 
 - the CLI and persisted startup metadata are real and deterministic now
 - backend seam calls are real (`install`, `uninstall`, `inspect`)
-- OS registration is still deferred because no installer backend is installed yet
+- the default selected backend may still be `unsupported` for a platform
 
-Until a real backend is wired, backend readiness resolves as `unsupported` at runtime and `.lifeline/startup.json` reflects that seam result after non-dry-run `enable` and `disable`.
+Contract behavior split:
+
+- `startup enable`/`startup disable` always call backend seam install/uninstall before persisting intent.
+- `startup status` always reports the active seam `inspect` view plus persisted intent.
+- `enable --dry-run` / `disable --dry-run` execute planning only and remain non-mutating.
+
+When the selected backend is unsupported, backend readiness resolves as `unsupported` and `.lifeline/startup.json` persists that seam result after non-dry-run `enable` and `disable`.
 
 Once a platform backend lands, this document and deterministic startup verification must be updated in the same change set to keep behavior discoverable.
 
 ## Windows status (current)
 
-As of Wave 2 (April 2026), Windows (`win32`) uses the same contract-only unsupported backend as Linux and macOS. Lifeline does **not** yet create a Task Scheduler registration.
+As of April 4, 2026, default `win32` backend resolution remains contract-only unsupported in normal CLI flow. Lifeline therefore does **not** currently guarantee Task Scheduler registration from `lifeline startup enable`.
 
 Expected unsupported detail shape:
 
 - `No startup installer backend is available on win32 yet.`
+- `Intent can still be recorded for future backend availability.`
 
 ## Restore entrypoint wiring
 

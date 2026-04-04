@@ -1,4 +1,11 @@
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+
+const execFileAsync = promisify(execFile);
 
 function assert(condition, message) {
   if (!condition) {
@@ -6,22 +13,17 @@ function assert(condition, message) {
   }
 }
 
-function buildStartupContractPlan({ action }) {
-  return {
-    action,
-    scope: 'machine-local',
-    restoreEntrypoint: 'lifeline restore',
-    backendStatus: 'not-installed',
-  };
-}
-
-function inspectStartupContractState(entry) {
-  return {
-    enabled: entry.intent === 'enabled',
-    scope: entry.scope,
-    restoreEntrypoint: entry.restoreEntrypoint,
-    backendStatus: entry.backendStatus,
-  };
+async function ensureBuiltCli() {
+  const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+  const cliPath = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
+  try {
+    await access(cliPath);
+  } catch {
+    await execFileAsync('pnpm', ['build'], {
+      cwd: repoRoot,
+      env: process.env,
+    });
+  }
 }
 
 async function verifyRestoreEntrypointWiring() {
@@ -69,40 +71,150 @@ async function verifyContractSurfaceWiring() {
   );
 }
 
-function verifyStartupContractPlanning() {
-  const plan = buildStartupContractPlan({ action: 'enable' });
+async function verifySeamInstallDisableStatusAndDryRun() {
+  await ensureBuiltCli();
 
-  assert(plan.scope === 'machine-local', `Expected machine-local scope, got: ${plan.scope}`);
-  assert(
-    plan.restoreEntrypoint === 'lifeline restore',
-    `Expected deterministic restore entrypoint, got: ${plan.restoreEntrypoint}`,
+  const tempDir = await import('node:fs/promises').then(({ mkdtemp }) =>
+    mkdtemp(path.join(os.tmpdir(), 'lifeline-wave2-startup-')),
   );
-  assert(
-    plan.backendStatus === 'not-installed',
-    `Expected deferred backend status, got: ${plan.backendStatus}`,
-  );
+  const previousCwd = process.cwd();
+  process.chdir(tempDir);
+
+  try {
+    const startupContractModule = await import(
+      new URL('../dist/core/startup-contract.js', import.meta.url)
+    );
+    const {
+      planStartupAction,
+      createStartupMutationRequest,
+      setStartupIntent,
+      getStartupStatus,
+    } = startupContractModule;
+
+    const statePath = path.join(tempDir, '.lifeline', 'startup.json');
+    const fakeBackendState = {
+      installed: false,
+      installRequests: [],
+      uninstallRequests: [],
+    };
+
+    const fakeBackend = {
+      id: 'deterministic-fake-backend',
+      capabilities: ['inspect', 'install', 'uninstall'],
+      inspect: async () => ({
+        supported: true,
+        status: fakeBackendState.installed ? 'installed' : 'not-installed',
+        mechanism: 'deterministic-fake-backend',
+        detail: fakeBackendState.installed
+          ? 'Fake backend reports startup registration installed.'
+          : 'Fake backend reports startup registration not installed.',
+      }),
+      install: async (request) => {
+        fakeBackendState.installRequests.push(request);
+        if (request.dryRun) {
+          return {
+            status: 'not-installed',
+            detail: 'Dry-run: fake backend would install startup registration.',
+          };
+        }
+
+        fakeBackendState.installed = true;
+        return {
+          status: 'installed',
+          detail: 'Fake backend installed startup registration.',
+        };
+      },
+      uninstall: async (request) => {
+        fakeBackendState.uninstallRequests.push(request);
+        if (request.dryRun) {
+          return {
+            status: fakeBackendState.installed ? 'installed' : 'not-installed',
+            detail: 'Dry-run: fake backend would remove startup registration.',
+          };
+        }
+
+        fakeBackendState.installed = false;
+        return {
+          status: 'not-installed',
+          detail: 'Fake backend removed startup registration.',
+        };
+      },
+    };
+
+    const dryRunEnablePlan = await planStartupAction('enable', fakeBackend);
+    assert(dryRunEnablePlan.backendStatus === 'not-installed', 'Expected enable dry-run plan to stay not-installed.');
+    assert(
+      fakeBackendState.installRequests.length === 1 && fakeBackendState.installRequests[0].dryRun === true,
+      'Expected enable plan to call backend install through dry-run seam request.',
+    );
+    await access(statePath).then(
+      () => {
+        throw new Error('Dry-run planning must not create .lifeline/startup.json.');
+      },
+      () => undefined,
+    );
+
+    const enableResult = await fakeBackend.install(createStartupMutationRequest());
+    await setStartupIntent('enabled', enableResult.status);
+    const statusAfterEnable = await getStartupStatus(fakeBackend);
+    assert(statusAfterEnable.enabled === true, 'Expected startup status to report enabled after install mutation.');
+    assert(
+      statusAfterEnable.detail.includes('installed'),
+      `Expected enabled startup status detail to include installed signal, got: ${statusAfterEnable.detail}`,
+    );
+
+    const dryRunDisablePlan = await planStartupAction('disable', fakeBackend);
+    assert(
+      dryRunDisablePlan.backendStatus === 'installed',
+      `Expected disable dry-run plan to reflect installed backend state, got ${dryRunDisablePlan.backendStatus}.`,
+    );
+    assert(
+      fakeBackendState.uninstallRequests.length === 1 && fakeBackendState.uninstallRequests[0].dryRun === true,
+      'Expected disable plan to call backend uninstall through dry-run seam request.',
+    );
+
+    const disableResult = await fakeBackend.uninstall(createStartupMutationRequest());
+    await setStartupIntent('disabled', disableResult.status);
+    const statusAfterDisable = await getStartupStatus(fakeBackend);
+    assert(statusAfterDisable.enabled === false, 'Expected startup status to report disabled after uninstall mutation.');
+    assert(
+      statusAfterDisable.detail.includes('not installed'),
+      `Expected disabled startup status detail to include not-installed signal, got: ${statusAfterDisable.detail}`,
+    );
+  } finally {
+    process.chdir(previousCwd);
+  }
 }
 
-function verifyContractStateInspection() {
-  const snapshot = inspectStartupContractState({
-    intent: 'enabled',
+async function verifyUnsupportedBackendPath() {
+  await ensureBuiltCli();
+  const startupBackendModule = await import(new URL('../dist/core/startup-backend.js', import.meta.url));
+  const { resolveStartupBackend } = startupBackendModule;
+  const backend = resolveStartupBackend({ platform: 'win32' });
+  const inspection = await backend.inspect();
+  const installResult = await backend.install({
     scope: 'machine-local',
     restoreEntrypoint: 'lifeline restore',
-    backendStatus: 'not-installed',
+    dryRun: false,
   });
 
-  assert(snapshot.enabled, 'Expected startup state inspection to mark enabled intent as true.');
+  assert(inspection.supported === false, 'Expected win32 unsupported backend path to report supported=false.');
+  assert(inspection.mechanism === 'contract-only', `Expected contract-only mechanism, got ${inspection.mechanism}.`);
   assert(
-    snapshot.restoreEntrypoint === 'lifeline restore',
-    `Expected startup state inspection to keep restore entrypoint, got ${snapshot.restoreEntrypoint}`,
+    inspection.detail.includes('No startup installer backend is available on win32 yet.'),
+    `Expected unsupported inspection detail to be explicit, got: ${inspection.detail}`,
+  );
+  assert(
+    installResult.detail.includes('Intent can still be recorded'),
+    `Expected unsupported install path to explain contract-only state persistence, got: ${installResult.detail}`,
   );
 }
 
 async function main() {
   await verifyRestoreEntrypointWiring();
   await verifyContractSurfaceWiring();
-  verifyStartupContractPlanning();
-  verifyContractStateInspection();
+  await verifySeamInstallDisableStatusAndDryRun();
+  await verifyUnsupportedBackendPath();
   console.log('Wave 2 startup deterministic verification passed.');
 }
 
