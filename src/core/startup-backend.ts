@@ -1,3 +1,4 @@
+import { createLaunchdBackend } from "./startup-backends/launchd.js";
 import { createSystemdUserBackend } from "./startup-backends/systemd.js";
 import { createWindowsTaskSchedulerBackend } from "./startup-backends/windows-task-scheduler.js";
 
@@ -39,6 +40,7 @@ export interface StartupBackendRegistry {
 
 const DEFAULT_STARTUP_BACKEND_REGISTRY: StartupBackendRegistry = {
   byPlatform: {
+    darwin: () => createLaunchdBackend(),
     linux: () => createSystemdUserBackend(),
     win32: () => createWindowsTaskSchedulerBackend(),
   },
