@@ -56,9 +56,23 @@ When the selected backend is unsupported, backend readiness resolves as `unsuppo
 
 Once a platform backend lands, this document and deterministic startup verification must be updated in the same change set to keep behavior discoverable.
 
+## Default backend registry coverage (current)
+
+As of April 5, 2026, `src/core/startup-backend.ts` registers real startup backends for:
+
+- `aix` → `aix-inittab`
+- `darwin` → `launchd-agent`
+- `freebsd` → `freebsd-rc.d`
+- `linux` → `systemd-user`
+- `netbsd` → `netbsd-rc.d`
+- `openbsd` → `openbsd-rcctl`
+- `win32` → `windows-task-scheduler`
+
+Any non-registered platform resolves to the explicit `unsupported` contract-only fallback backend.
+
 ## Windows backend status (current)
 
-As of April 4, 2026, default `win32` backend resolution selects the `windows-task-scheduler` backend in normal CLI flow.
+As of April 5, 2026, default `win32` backend resolution selects the `windows-task-scheduler` backend in normal CLI flow.
 
 Behavior:
 
@@ -70,7 +84,7 @@ Behavior:
 
 ## Linux backend status (current)
 
-As of April 4, 2026, default `linux` backend resolution selects the `systemd-user` backend in normal CLI flow.
+As of April 5, 2026, default `linux` backend resolution selects the `systemd-user` backend in normal CLI flow.
 
 Behavior:
 
