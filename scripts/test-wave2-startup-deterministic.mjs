@@ -222,7 +222,25 @@ async function verifyBackendResolutionCoverageAndFallback() {
   const startupBackendModule = await import(
     new URL("../dist/core/startup-backend.js", import.meta.url)
   );
-  const { resolveStartupBackend } = startupBackendModule;
+  const { resolveStartupBackend, DEFAULT_STARTUP_BACKEND_REGISTRY } =
+    startupBackendModule;
+
+  const resolvedPlatforms = Object.keys(
+    DEFAULT_STARTUP_BACKEND_REGISTRY.byPlatform,
+  ).sort();
+  const expectedPlatforms = [
+    "aix",
+    "darwin",
+    "freebsd",
+    "linux",
+    "netbsd",
+    "openbsd",
+    "win32",
+  ];
+  assert(
+    JSON.stringify(resolvedPlatforms) === JSON.stringify(expectedPlatforms),
+    `Expected startup backend registry coverage ${expectedPlatforms.join(", ")}, got ${resolvedPlatforms.join(", ")}.`,
+  );
 
   const darwinBackend = resolveStartupBackend({ platform: "darwin" });
   assert(

@@ -45,7 +45,7 @@ export interface StartupBackendRegistry {
   byPlatform: Partial<Record<RuntimePlatform, StartupBackendFactory>>;
 }
 
-const DEFAULT_STARTUP_BACKEND_REGISTRY: StartupBackendRegistry = {
+export const DEFAULT_STARTUP_BACKEND_REGISTRY: StartupBackendRegistry = {
   byPlatform: {
     aix: () => createAixInittabBackend(),
     darwin: () => createLaunchdBackend(),
