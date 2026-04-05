@@ -186,13 +186,19 @@ async function verifySeamInstallDisableStatusAndDryRun() {
   }
 }
 
-async function verifyLinuxBackendResolutionAndFallback() {
+async function verifyBackendResolutionCoverageAndFallback() {
   await ensureBuiltCli();
   const startupBackendModule = await import(new URL('../dist/core/startup-backend.js', import.meta.url));
   const { resolveStartupBackend } = startupBackendModule;
 
+  const darwinBackend = resolveStartupBackend({ platform: 'darwin' });
+  assert(darwinBackend.id === 'launchd-agent', `Expected darwin backend to resolve to launchd-agent, got ${darwinBackend.id}.`);
+
   const linuxBackend = resolveStartupBackend({ platform: 'linux' });
   assert(linuxBackend.id === 'systemd-user', `Expected linux backend to resolve to systemd-user, got ${linuxBackend.id}.`);
+
+  const win32Backend = resolveStartupBackend({ platform: 'win32' });
+  assert(win32Backend.id === 'windows-task-scheduler', `Expected win32 backend to resolve to windows-task-scheduler, got ${win32Backend.id}.`);
 
   const freebsdBackend = resolveStartupBackend({ platform: 'freebsd' });
   const fallbackInspection = await freebsdBackend.inspect();
@@ -201,6 +207,91 @@ async function verifyLinuxBackendResolutionAndFallback() {
   assert(
     fallbackInspection.detail.includes('No startup installer backend is available on freebsd yet.'),
     `Expected unsupported inspection detail to include platform name, got: ${fallbackInspection.detail}`,
+  );
+}
+
+
+async function verifyLaunchdBackendDeterministicBehavior() {
+  await ensureBuiltCli();
+
+  const { mkdtemp, readFile } = await import('node:fs/promises');
+  const startupBackendLaunchdModule = await import(new URL('../dist/core/startup-backends/launchd.js', import.meta.url));
+  const { createLaunchdBackend } = startupBackendLaunchdModule;
+
+  const tempHome = await mkdtemp(path.join(os.tmpdir(), 'lifeline-launchd-backend-'));
+  const invoked = [];
+
+  const runner = async (args) => {
+    invoked.push(args);
+
+    if (args.join(' ') === 'print gui/502/io.lifeline.restore') {
+      return { code: 1, stdout: '', stderr: 'Could not find service "io.lifeline.restore" in domain for user gui/502' };
+    }
+
+    if (args.join(' ') === 'bootout gui/502/io.lifeline.restore') {
+      return { code: 0, stdout: '', stderr: '' };
+    }
+
+    if (args.join(' ') === `bootstrap gui/502 ${path.join(tempHome, 'Library', 'LaunchAgents', 'io.lifeline.restore.plist')}`) {
+      return { code: 0, stdout: '', stderr: '' };
+    }
+
+    throw new Error(`Unexpected launchctl invocation in deterministic test: ${args.join(' ')}`);
+  };
+
+  const backend = createLaunchdBackend(runner, { homeDirectory: tempHome, uid: 502 });
+
+  const dryRunInstall = await backend.install({
+    scope: 'machine-local',
+    restoreEntrypoint: 'lifeline restore',
+    dryRun: true,
+  });
+  assert(dryRunInstall.status === 'not-installed', `Expected launchd dry-run install status not-installed, got ${dryRunInstall.status}.`);
+  assert(
+    dryRunInstall.detail.includes('would write') && dryRunInstall.detail.includes('bootstrap io.lifeline.restore'),
+    `Expected launchd dry-run install detail to describe plist/bootstrap intent, got: ${dryRunInstall.detail}`
+  );
+
+  const installResult = await backend.install({
+    scope: 'machine-local',
+    restoreEntrypoint: 'lifeline restore',
+    dryRun: false,
+  });
+  assert(installResult.status === 'installed', `Expected launchd install status installed, got ${installResult.status}.`);
+
+  const plistPath = path.join(tempHome, 'Library', 'LaunchAgents', 'io.lifeline.restore.plist');
+  const rawPlist = await readFile(plistPath, 'utf8');
+  assert(
+    rawPlist.includes('<string>lifeline</string>') && rawPlist.includes('<string>restore</string>'),
+    `Expected installed launchd plist to keep canonical restore entrypoint.\n${rawPlist}`
+  );
+
+  const dryRunUninstall = await backend.uninstall({
+    scope: 'machine-local',
+    restoreEntrypoint: 'lifeline restore',
+    dryRun: true,
+  });
+  assert(
+    dryRunUninstall.detail.includes('LaunchAgent io.lifeline.restore is not present') ||
+      dryRunUninstall.detail.includes('would bootout LaunchAgent io.lifeline.restore'),
+    `Expected launchd dry-run uninstall detail to describe deterministic removal intent, got: ${dryRunUninstall.detail}`
+  );
+
+  const uninstallResult = await backend.uninstall({
+    scope: 'machine-local',
+    restoreEntrypoint: 'lifeline restore',
+    dryRun: false,
+  });
+  assert(uninstallResult.status === 'not-installed', `Expected launchd uninstall status not-installed, got ${uninstallResult.status}.`);
+
+  const invokedCommands = invoked.map((command) => command.join(' '));
+  assert(
+    invokedCommands.includes(`bootstrap gui/502 ${plistPath}`),
+    `Expected launchd install path to run bootstrap.\ncommands:\n${invokedCommands.join('\n')}`
+  );
+  assert(
+    invokedCommands.includes('bootout gui/502/io.lifeline.restore'),
+    `Expected launchd uninstall path to run bootout.\ncommands:\n${invokedCommands.join('\n')}`
   );
 }
 
@@ -298,7 +389,8 @@ async function main() {
   await verifyRestoreEntrypointWiring();
   await verifyContractSurfaceWiring();
   await verifySeamInstallDisableStatusAndDryRun();
-  await verifyLinuxBackendResolutionAndFallback();
+  await verifyBackendResolutionCoverageAndFallback();
+  await verifyLaunchdBackendDeterministicBehavior();
   await verifySystemdBackendDeterministicBehavior();
   console.log('Wave 2 startup deterministic verification passed.');
 }

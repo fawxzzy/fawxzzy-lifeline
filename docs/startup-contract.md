@@ -1,12 +1,12 @@
 # Startup contract (merged Wave 2)
 
-Merged Wave 2 defines Lifeline's startup-registration seam and deterministic CLI/state behavior. This document tracks the contract boundary and current runtime behavior, including current Windows Task Scheduler support, Linux user-systemd support, and unsupported-platform fallback behavior.
+Merged Wave 2 defines Lifeline's startup-registration seam and deterministic CLI/state behavior. This document tracks the contract boundary and current runtime behavior, including current Windows Task Scheduler support, Linux user-systemd support, macOS launchd support, and unsupported-platform fallback behavior.
 
 ## Scope
 
 - Startup registration scope is **machine-local**.
 - The contract target is always the Lifeline restore entrypoint: `lifeline restore`.
-- The contract is platform-neutral and does not expose Task Scheduler/systemd/launchd specifics.
+- The contract is platform-neutral and does not expose Task Scheduler/systemd/launchd specifics to callers.
 
 ## CLI surface
 
@@ -79,9 +79,20 @@ Behavior:
 - `startup status` inspects the same user unit via `systemctl --user cat lifeline-restore.service` and reports `systemd-user` mechanism.
 - If `systemctl` is unavailable for the user session, backend detail is explicit and readiness resolves to `unsupported`.
 
+## macOS backend status (current)
+
+As of April 5, 2026, default `darwin` backend resolution selects the `launchd-agent` backend in normal CLI flow.
+
+Behavior:
+
+- `startup enable` writes `~/Library/LaunchAgents/io.lifeline.restore.plist` and bootstraps it in the current user domain (`gui/<uid>`) for `lifeline restore`.
+- `startup disable` boots out `io.lifeline.restore` from the same user domain and removes that LaunchAgent plist.
+- `startup status` verifies canonical `lifeline restore` ProgramArguments from that plist and inspects `launchctl print gui/<uid>/io.lifeline.restore` to report install state via `launchd-agent` mechanism.
+- If `launchctl` is unavailable, backend detail is explicit and readiness resolves to `unsupported`.
+
 ## Unsupported platform behavior (current)
 
-Platforms without a registered installer backend currently resolve to the `unsupported` backend (for example, `darwin` and `freebsd`):
+Platforms without a registered installer backend currently resolve to the `unsupported` backend (for example, `freebsd`):
 
 - mechanism is `contract-only`
 - status is `unsupported`
@@ -109,4 +120,4 @@ No platform-specific registration identifiers are persisted in this slice.
 
 Future platform installers must plug into this contract, not bypass it. Backends should read the contract intent and apply OS-specific wiring while preserving the contract's machine-local scope and restore-entrypoint target.
 
-Current shipped installer coverage is `win32` via Task Scheduler and `linux` via user systemd; remaining deferred startup installers are unregistered platforms (for example, macOS `launchd`).
+Current shipped installer coverage is `win32` via Task Scheduler, `linux` via user systemd, and `darwin` via launchd; remaining deferred startup installers are still-unregistered platforms.
