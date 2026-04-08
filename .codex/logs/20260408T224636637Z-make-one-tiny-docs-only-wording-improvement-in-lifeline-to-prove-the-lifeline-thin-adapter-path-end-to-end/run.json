@@ -1,0 +1,214 @@
+{
+    "runId":  "20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end",
+    "status":  "verification_failed",
+    "repoRoot":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline",
+    "configPath":  "C:\\Users\\zjhre\\dev\\_stack\\ops\\codex\\repos\\lifeline\\config.toml",
+    "defaultsPath":  "C:\\Users\\zjhre\\dev\\_stack\\ops\\codex\\config.defaults.toml",
+    "promptPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\inbox\\lifeline-smoke-doc-touch.md",
+    "archivePath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\archive\\20260408T224843541Z-lifeline-smoke-doc-touch-verification_failed.md",
+    "branchName":  "codex/make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end",
+    "baseRef":  "origin/main",
+    "configuredBaseRef":  "origin/main",
+    "baseRefUsedFallback":  false,
+    "baseRefCandidates":  [
+                              "origin/main",
+                              "main"
+                          ],
+    "worktreePath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\worktrees\\make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end",
+    "commitSha":  null,
+    "commit":  {
+                   "enabled":  true,
+                   "message":  null,
+                   "messagePath":  null,
+                   "metadataPath":  null,
+                   "source":  null,
+                   "artifactPath":  ".codex/commit-meta.json",
+                   "artifactLogPath":  null,
+                   "artifactProvided":  false,
+                   "artifactParseError":  null,
+                   "artifactTracked":  false,
+                   "artifactRemoved":  false,
+                   "validationFailures":  {
+
+                                          }
+               },
+    "sandboxMode":  "workspace-write",
+    "logs":  {
+                 "directory":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end",
+                 "manifest":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\run.json",
+                 "codexStdOut":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\codex.stdout.log",
+                 "codexStdErr":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\codex.stderr.log",
+                 "finalSummary":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\final-summary.md"
+             },
+    "verification":  [
+                         {
+                             "command":  "pnpm ci:verify:esbuild",
+                             "exitCode":  0,
+                             "stdoutPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-01.stdout.log",
+                             "stderrPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-01.stderr.log"
+                         },
+                         {
+                             "command":  "pnpm typecheck",
+                             "exitCode":  0,
+                             "stdoutPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-02.stdout.log",
+                             "stderrPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-02.stderr.log"
+                         },
+                         {
+                             "command":  "pnpm build",
+                             "exitCode":  0,
+                             "stdoutPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-03.stdout.log",
+                             "stderrPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-03.stderr.log"
+                         },
+                         {
+                             "command":  "node scripts/lib/ensure-built.mjs",
+                             "exitCode":  0,
+                             "stdoutPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-04.stdout.log",
+                             "stderrPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-04.stderr.log"
+                         },
+                         {
+                             "command":  "pnpm test:run all",
+                             "exitCode":  1,
+                             "stdoutPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-05.stdout.log",
+                             "stderrPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\verify-05.stderr.log"
+                         }
+                     ],
+    "verificationBootstrap":  [
+                                  {
+                                      "command":  "pnpm install --frozen-lockfile",
+                                      "exitCode":  0,
+                                      "stdoutPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\bootstrap-01.stdout.log",
+                                      "stderrPath":  "C:\\Users\\zjhre\\dev\\fawxzzy-lifeline\\.codex\\logs\\20260408T224636637Z-make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end\\verification\\bootstrap-01.stderr.log"
+                                  }
+                              ],
+    "verificationSource":  "adapter-default",
+    "changedPaths":  [
+
+                     ],
+    "mutationScopeViolations":  [
+
+                                ],
+    "exportErrors":  [
+
+                     ],
+    "exports":  {
+                    "enabledPatch":  false,
+                    "enabledBundle":  false,
+                    "configuredFormatPatchBaseRef":  null,
+                    "resolvedFormatPatchBaseRef":  null,
+                    "formatPatchBaseRefUsedFallback":  false,
+                    "formatPatchBaseRefCandidates":  [
+
+                                                     ]
+                },
+    "docsUpdateNote":  null,
+    "repoAdapter":  {
+                        "path":  "C:\\Users\\zjhre\\dev\\_stack\\ops\\codex\\repos\\lifeline\\adapter.json",
+                        "kind":  "stack-codex-repo-adapter",
+                        "schemaVersion":  "1.2",
+                        "repoId":  "lifeline",
+                        "description":  "Lifeline adapter for the shared _stack Codex inbox/worktree runner.",
+                        "allowedMutationSurfaces":  [
+                                                        ".codex/**",
+                                                        ".editorconfig",
+                                                        ".github/workflows/ci.yml",
+                                                        ".github/workflows/playbook-verify.yml",
+                                                        ".gitignore",
+                                                        ".gitkeep",
+                                                        ".npmrc",
+                                                        ".nvmrc",
+                                                        "README.md",
+                                                        "biome.json",
+                                                        "docs/**",
+                                                        "examples/**",
+                                                        "fixtures/**",
+                                                        "package.json",
+                                                        "playbook.config.json",
+                                                        "pnpm-lock.yaml",
+                                                        "scripts/**",
+                                                        "src/**",
+                                                        "tsconfig.json"
+                                                    ],
+                        "docsUpdateRules":  [
+                                                "If Lifeline command surface, runtime behavior, manifest contract, or startup contract changes, keep README.md, docs/architecture.md, docs/contracts/app-manifest.md, docs/startup-contract.md, docs/testing.md, and docs/CHANGELOG.md aligned in the same change or immediately after.",
+                                                "If grouped verify runners, smoke suite wiring, or helper-script invocation changes, keep README.md and docs/testing.md aligned and prefer the existing suite-runner entrypoints over inventing one-off verification commands.",
+                                                "Keep Lifeline repo-local and self-hosted in this phase; do not route Lifeline adapter work through Vercel or expand _stack into dispatcher-level multi-repo Codex orchestration from this adapter."
+                                            ],
+                        "bootstrapVerifyCommands":  "pnpm install --frozen-lockfile",
+                        "defaultVerifyCommands":  [
+                                                      "pnpm ci:verify:esbuild",
+                                                      "pnpm typecheck",
+                                                      "pnpm build",
+                                                      "node scripts/lib/ensure-built.mjs",
+                                                      "pnpm test:run all",
+                                                      "pnpm smoke:suite all"
+                                                  ],
+                        "artifacts":  {
+                                          "inboxDir":  ".codex/inbox",
+                                          "archiveDir":  ".codex/archive",
+                                          "logsDir":  ".codex/logs",
+                                          "worktreeRoot":  ".codex/worktrees",
+                                          "exportsDir":  ".codex/exports"
+                                      },
+                        "pushPolicy":  {
+                                           "mode":  "manual-only",
+                                           "skipPush":  true,
+                                           "allowAutoPush":  false
+                                       },
+                        "autoCommitPolicy":  {
+                                                 "enabled":  true,
+                                                 "mode":  "on-successful-mutation",
+                                                 "skipEmptyCommit":  true,
+                                                 "requireVerificationPass":  true,
+                                                 "commitMetadata":  {
+                                                                        "artifactPath":  ".codex/commit-meta.json",
+                                                                        "allowedTypes":  [
+                                                                                             "feat",
+                                                                                             "fix",
+                                                                                             "docs",
+                                                                                             "refactor",
+                                                                                             "test",
+                                                                                             "chore"
+                                                                                         ],
+                                                                        "rejectedSummaries":  [
+                                                                                                  "update",
+                                                                                                  "done",
+                                                                                                  "fixes",
+                                                                                                  "misc changes"
+                                                                                              ],
+                                                                        "fallbackScope":  "lifeline"
+                                                                    }
+                                             },
+                        "localLandingPolicy":  {
+                                                   "mode":  "disabled",
+                                                   "targetBranch":  "main"
+                                               },
+                        "exports":  {
+                                        "patch":  true,
+                                        "bundle":  false,
+                                        "formatPatchBaseRef":  "origin/main"
+                                    },
+                        "execution":  {
+                                          "baseRef":  "origin/main",
+                                          "branchPrefix":  "codex/",
+                                          "defaultSandbox":  "workspace-write",
+                                          "documentedWindowsFallback":  "danger-full-access",
+                                          "cleanupWorktreeOnSuccess":  false,
+                                          "fetchOrigin":  false
+                                      }
+                    },
+    "effectivePolicies":  {
+                              "autoCommitEnabled":  true,
+                              "pushMode":  "manual-only",
+                              "skipPush":  true,
+                              "localLandingMode":  "disabled",
+                              "localLandingTargetBranch":  "main"
+                          },
+    "localLanding":  {
+                         "mode":  "disabled",
+                         "targetBranch":  "main",
+                         "taskBranch":  "codex/make-one-tiny-docs-only-wording-improvement-in-lifeline-to-prove-the-lifeline-thin-adapter-path-end-to-end",
+                         "commitSha":  null,
+                         "landed_to_main":  false,
+                         "failureReason":  "disabled_by_policy"
+                     }
+}
