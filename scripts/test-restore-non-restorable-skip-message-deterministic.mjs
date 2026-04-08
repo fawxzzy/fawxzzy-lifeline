@@ -3,6 +3,7 @@ import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { ensureBuilt } from "./lib/ensure-built.mjs";
 
 await ensureBuilt();
@@ -14,7 +15,7 @@ const uniqueSuffix = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 const appName = `restore-non-restorable-${uniqueSuffix}`;
 const runtimePort = 9700 + Math.floor(Math.random() * 200);
 
-const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = ["node", path.join(repoRoot, "dist", "cli.js")];
 
 function run(args, { allowFailure = false } = {}) {

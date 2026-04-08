@@ -3,6 +3,7 @@ import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { ensureBuilt } from "./lib/ensure-built.mjs";
 
 await ensureBuilt();
@@ -15,7 +16,7 @@ const appName = `blocked-listener-coherence-${uniqueSuffix}`;
 const runtimePort = 9800 + Math.floor(Math.random() * 150);
 
 const statePath = ".lifeline/state.json";
-const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = ["node", path.join(repoRoot, "dist", "cli.js")];
 
 let foreignServer;

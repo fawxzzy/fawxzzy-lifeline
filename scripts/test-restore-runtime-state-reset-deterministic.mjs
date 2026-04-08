@@ -4,6 +4,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { ensureBuilt } from "./lib/ensure-built.mjs";
 
 await ensureBuilt();
@@ -16,7 +17,7 @@ const appName = `restore-state-reset-${uniqueSuffix}`;
 const runtimePort = 9600 + Math.floor(Math.random() * 200);
 
 const statePath = ".lifeline/state.json";
-const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = ["node", path.join(repoRoot, "dist", "cli.js")];
 
 function run(args, { allowFailure = false } = {}) {
