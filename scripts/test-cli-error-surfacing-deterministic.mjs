@@ -3,7 +3,7 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { ensureBuilt } from "./lib/ensure-built.mjs";
 
 await ensureBuilt();
@@ -58,10 +58,12 @@ assert(
 
 const harnessRoot = await mkdtemp(path.join(os.tmpdir(), "lifeline-cli-error-surfacing-"));
 const harnessPath = path.join(harnessRoot, "unexpected-error-harness.mjs");
-const errorsPath = fileURLToPath(new URL("../dist/core/errors.js", import.meta.url));
+const errorsModuleUrl = pathToFileURL(
+  fileURLToPath(new URL("../dist/core/errors.js", import.meta.url)),
+).href;
 
 const harness = `
-import { LifelineError } from ${JSON.stringify(errorsPath)};
+import { LifelineError } from ${JSON.stringify(errorsModuleUrl)};
 
 Promise.reject(new Error("forced unexpected failure"))
   .catch((error) => {
