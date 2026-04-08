@@ -150,8 +150,19 @@ Current merged Wave 2 startup-contract behavior:
 - Current NetBSD (`netbsd`) behavior uses a real rc.d backend (`netbsd-rc.d`) that writes `/etc/rc.d/lifeline_restore` and enables it via `/etc/rc.conf.d/lifeline_restore`.
 - Current AIX (`aix`) behavior uses a real inittab backend (`aix-inittab`) that manages a canonical `llrestore` inittab entry to run `lifeline restore` at startup.
 - AIX startup registration assumes `lsitab`/`mkitab`/`chitab`/`rmitab` are available and writable for `/etc/inittab`; when those tools are unavailable or permission is insufficient, status and mutation details remain explicit from the backend seam.
-- Default startup backend registration coverage in `src/core/startup-backend.ts` is `aix`, `darwin`, `freebsd`, `linux`, `netbsd`, `openbsd`, and `win32`; any other platform still resolves through the explicit `contract-only` unsupported fallback (for example, SunOS).
-- Shipped startup backend platform set is exactly `aix`, `darwin`, `freebsd`, `linux`, `netbsd`, `openbsd`, and `win32`; keep unregistered platforms on explicit `contract-only` fallback until a real backend ships.
+
+Default startup backend registry coverage in `src/core/startup-backend.ts` is exactly:
+
+- `aix` -> `aix-inittab`
+- `darwin` -> `launchd-agent`
+- `freebsd` -> `freebsd-rc.d`
+- `linux` -> `systemd-user`
+- `netbsd` -> `netbsd-rc.d`
+- `openbsd` -> `openbsd-rcctl`
+- `win32` -> `windows-task-scheduler`
+
+Shipped startup backend platform set is exactly `aix`, `darwin`, `freebsd`, `linux`, `netbsd`, `openbsd`, and `win32`.
+Any non-registered platform still resolves through the explicit `unsupported` `contract-only` fallback backend.
 
 When the active backend is unsupported, startup status reports mechanism (`contract-only`) so fallback behavior stays explicit.
 

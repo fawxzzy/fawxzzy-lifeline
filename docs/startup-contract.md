@@ -59,7 +59,7 @@ Once a platform backend lands, this document and deterministic startup verificat
 
 ## Default backend registry coverage (current)
 
-`src/core/startup-backend.ts` currently registers real startup backends for:
+`src/core/startup-backend.ts` exactly registers the following startup backends:
 
 - `aix` → `aix-inittab`
 - `darwin` → `launchd-agent`
@@ -69,6 +69,7 @@ Once a platform backend lands, this document and deterministic startup verificat
 - `openbsd` → `openbsd-rcctl`
 - `win32` → `windows-task-scheduler`
 
+Shipped startup backend platform set is exactly `aix`, `darwin`, `freebsd`, `linux`, `netbsd`, `openbsd`, and `win32`.
 Any non-registered platform resolves to the explicit `unsupported` contract-only fallback backend.
 
 ## Windows backend status (current)
