@@ -19,6 +19,7 @@ const runtimePort = 9500 + Math.floor(Math.random() * 300);
 const statePath = ".lifeline/state.json";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const cli = ["node", path.join(repoRoot, "dist", "cli.js")];
+let restoredPid;
 
 function run(args, { allowFailure = false } = {}) {
   return new Promise((resolve, reject) => {
@@ -129,6 +130,22 @@ async function waitForRunningState() {
   );
 }
 
+async function waitForRestoreSupervisorHandoff(pid) {
+  for (let i = 0; i < 60; i += 1) {
+    const appState = await readAppState();
+    if (
+      appState &&
+      appState.lastKnownStatus === "running" &&
+      appState.supervisorPid !== pid &&
+      isPidAlive(appState.supervisorPid)
+    ) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+}
+
 async function prepareFixture() {
   const fixtureDir = path.join(tempRoot, "runtime-smoke-app");
   await cp(path.join(repoRoot, "fixtures", "runtime-smoke-app"), fixtureDir, { recursive: true });
@@ -181,7 +198,7 @@ try {
     );
   }
 
-  const restoredPid = Number.parseInt(restoreLineMatch[1], 10);
+  restoredPid = Number.parseInt(restoreLineMatch[1], 10);
   if (!Number.isInteger(restoredPid) || restoredPid <= 0) {
     throw new Error(`Expected a valid restored supervisor pid, received ${restoreLineMatch[1]}`);
   }
@@ -205,7 +222,15 @@ try {
 
   console.log("Restore supervisor pid coherence deterministic verification passed.");
 } finally {
-  process.chdir(originalCwd);
-  await run(["down", appName], { allowFailure: true }).catch(() => undefined);
+  try {
+    process.chdir(tempRoot);
+    if (restoredPid) {
+      await waitForRestoreSupervisorHandoff(restoredPid).catch(() => undefined);
+    }
+    await run(["down", appName], { allowFailure: true }).catch(() => undefined);
+  } finally {
+    process.chdir(originalCwd);
+  }
+
   await rm(tempRoot, { recursive: true, force: true });
 }
