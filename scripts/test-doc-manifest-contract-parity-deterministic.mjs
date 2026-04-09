@@ -29,6 +29,10 @@ function parseStringConst(source, constName) {
   return match[1];
 }
 
+function normalizeLineEndings(source) {
+  return source.replace(/\r\n?/g, '\n');
+}
+
 async function main() {
   const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
@@ -89,7 +93,7 @@ async function main() {
     .map((value) => `- \`${value}\``)
     .join('\n');
   assert(
-    manifestDocs.includes(docsSupportedArchetypesBlock),
+    normalizeLineEndings(manifestDocs).includes(docsSupportedArchetypesBlock),
     'docs/contracts/app-manifest.md supported archetypes list drifted from source constants ordering/content.',
   );
 
