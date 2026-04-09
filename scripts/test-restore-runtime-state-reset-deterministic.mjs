@@ -99,6 +99,28 @@ async function waitForPortRelease(port) {
   throw new Error(`Timed out waiting for runtime port ${port} to be released`);
 }
 
+async function removeDirectoryWithRetry(targetPath, attempts = 50, delayMs = 100) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      await rm(targetPath, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        (error.code === "EBUSY" || error.code === "ENOTEMPTY" || error.code === "EPERM") &&
+        attempt < attempts - 1
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
+
+      throw error;
+    }
+  }
+}
+
 async function readAppState() {
   const raw = await readFile(statePath, "utf8").catch(() => "");
   if (!raw) {
@@ -274,7 +296,16 @@ try {
 
   console.log("Restore runtime state reset deterministic verification passed.");
 } finally {
-  process.chdir(originalCwd);
-  await run(["down", appName], { allowFailure: true }).catch(() => undefined);
-  await rm(tempRoot, { recursive: true, force: true });
+  try {
+    const currentState = await readAppState().catch(() => undefined);
+    if (currentState?.supervisorPid && isPidAlive(currentState.supervisorPid)) {
+      await waitForRunningState().catch(() => undefined);
+    }
+
+    await run(["down", appName], { allowFailure: true }).catch(() => undefined);
+    await waitForPortRelease(runtimePort).catch(() => undefined);
+  } finally {
+    process.chdir(originalCwd);
+    await removeDirectoryWithRetry(tempRoot);
+  }
 }

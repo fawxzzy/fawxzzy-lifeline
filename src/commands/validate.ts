@@ -33,6 +33,10 @@ function isFitnessMirrorManifestPath(manifestPath: string): boolean {
   );
 }
 
+function normalizePathForOutput(filePath: string): string {
+  return filePath.replace(/\\/g, "/");
+}
+
 export async function runValidateCommand(
   manifestPath: string,
   playbookPath?: string,
@@ -47,7 +51,7 @@ export async function runValidateCommand(
       console.log(`- archetype: ${resolved.resolvedManifest.archetype}`);
       console.log(`- port: ${resolved.resolvedManifest.port}`);
       if (resolved.playbookPath) {
-        console.log(`- playbook: ${resolved.playbookPath}`);
+        console.log(`- playbook: ${normalizePathForOutput(resolved.playbookPath)}`);
       }
       return 0;
     }

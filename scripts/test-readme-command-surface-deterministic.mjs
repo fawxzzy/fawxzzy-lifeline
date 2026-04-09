@@ -18,9 +18,10 @@ function normalizeWhitespace(value) {
 }
 
 function extractReadmeCommands(readmeText) {
+  const normalizedReadmeText = readmeText.replace(/\r\n/g, '\n');
   const commands = [];
   const codeBlockPattern = /```bash\n([\s\S]*?)```/g;
-  for (const match of readmeText.matchAll(codeBlockPattern)) {
+  for (const match of normalizedReadmeText.matchAll(codeBlockPattern)) {
     const block = match[1] ?? '';
     const mergedLines = [];
     let pending = '';
