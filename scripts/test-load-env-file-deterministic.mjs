@@ -5,6 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import typescript from "typescript";
+import { ensureTempEsmPackage } from "./lib/ensure-temp-esm-package.mjs";
 
 async function transpileCoreModule(tempRoot, relativePath) {
   const sourcePath = path.join("src", "core", relativePath);
@@ -25,6 +26,7 @@ async function transpileCoreModule(tempRoot, relativePath) {
 async function loadParserFromSource() {
   const transpileRoot = await mkdtemp(path.join(os.tmpdir(), "lifeline-load-env-transpile-"));
   try {
+    await ensureTempEsmPackage(transpileRoot);
     await Promise.all([
       transpileCoreModule(transpileRoot, "errors.ts"),
       transpileCoreModule(transpileRoot, "load-env-file.ts"),

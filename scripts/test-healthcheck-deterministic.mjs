@@ -6,6 +6,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import typescript from "typescript";
+import { ensureTempEsmPackage } from "./lib/ensure-temp-esm-package.mjs";
 
 async function transpileHealthcheckModule(tempRoot) {
   const relativePath = "healthcheck.ts";
@@ -29,6 +30,7 @@ async function transpileHealthcheckModule(tempRoot) {
 async function loadHealthcheckHelpersFromSource() {
   const transpileRoot = await mkdtemp(path.join(os.tmpdir(), "lifeline-healthcheck-transpile-"));
   try {
+    await ensureTempEsmPackage(transpileRoot);
     const modulePath = await transpileHealthcheckModule(transpileRoot);
     const moduleUrl = pathToFileURL(modulePath).href;
     const module = await import(moduleUrl);

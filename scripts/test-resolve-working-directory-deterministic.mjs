@@ -5,6 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import typescript from "typescript";
+import { ensureTempEsmPackage } from "./lib/ensure-temp-esm-package.mjs";
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -36,6 +37,7 @@ async function loadResolverFromSource() {
   );
 
   try {
+    await ensureTempEsmPackage(transpileRoot);
     await Promise.all([
       transpileCoreModule(transpileRoot, "errors.ts"),
       transpileCoreModule(transpileRoot, "resolve-working-directory.ts"),

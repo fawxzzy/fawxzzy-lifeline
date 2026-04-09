@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import ts from "typescript";
+import { ensureTempEsmPackage } from "./lib/ensure-temp-esm-package.mjs";
 
 async function transpileSourceToTemp(tsRelativePath, outRoot) {
   const sourcePath = fileURLToPath(new URL(`../${tsRelativePath}`, import.meta.url));
@@ -64,6 +65,7 @@ function assertThrowsManifestLoadError(parseSimpleYaml, ManifestLoadError, sourc
 const tempRoot = await mkdtemp(path.join(os.tmpdir(), "lifeline-parse-simple-yaml-"));
 
 try {
+  await ensureTempEsmPackage(tempRoot);
   await transpileSourceToTemp("src/core/errors.ts", tempRoot);
   const loadManifestPath = await transpileSourceToTemp(
     "src/core/load-manifest.ts",

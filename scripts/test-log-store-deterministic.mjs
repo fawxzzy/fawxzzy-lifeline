@@ -6,6 +6,7 @@ import process from "node:process";
 import { pathToFileURL } from "node:url";
 
 import typescript from "typescript";
+import { ensureTempEsmPackage } from "./lib/ensure-temp-esm-package.mjs";
 
 async function transpileLogStoreModule(transpileRoot) {
   const sourcePath = path.join("src", "core", "log-store.ts");
@@ -31,6 +32,7 @@ const transpileRoot = await mkdtemp(
 );
 
 try {
+  await ensureTempEsmPackage(transpileRoot);
   const modulePath = await transpileLogStoreModule(transpileRoot);
 
   process.chdir(tempRoot);

@@ -9,6 +9,7 @@ import {
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
+import { ensureTempEsmPackage } from './lib/ensure-temp-esm-package.mjs';
 
 function assert(condition, message) {
   if (!condition) {
@@ -32,6 +33,7 @@ const tempDistContractsDir = resolve(tempRoot, 'dist', 'contracts');
 mkdirSync(tempScriptDir, { recursive: true });
 mkdirSync(tempExamplesDir, { recursive: true });
 mkdirSync(tempDistContractsDir, { recursive: true });
+await ensureTempEsmPackage(tempRoot);
 
 copyFileSync(resolve(repoRoot, 'scripts/validate-fitness-mirror.mjs'), resolve(tempScriptDir, 'validate-fitness-mirror.mjs'));
 copyFileSync(resolve(repoRoot, 'examples/fitness-app.lifeline.yml'), resolve(tempExamplesDir, 'fitness-app.lifeline.yml'));
