@@ -21,7 +21,11 @@ function normalizeOutput(output, manifestPath) {
 }
 
 const repoRoot = process.cwd();
-const build = spawnSync('pnpm', ['build'], {
+const buildCommand =
+  process.platform === 'win32'
+    ? { file: process.env.ComSpec ?? 'cmd.exe', args: ['/d', '/s', '/c', 'pnpm.cmd build'] }
+    : { file: 'pnpm', args: ['build'] };
+const build = spawnSync(buildCommand.file, buildCommand.args, {
   cwd: repoRoot,
   encoding: 'utf8',
 });
