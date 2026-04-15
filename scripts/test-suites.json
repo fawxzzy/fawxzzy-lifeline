@@ -62,6 +62,7 @@
   ],
   "examples": [
     "test-example-manifests-deterministic.mjs",
+    "test-privileged-execution-worker-bridge-deterministic.mjs",
     "test-validate-boundaries.mjs",
     "test-validate-fitness-mirror-path-parity-deterministic.mjs",
     "test-validate-fitness-mirror-script-deterministic.mjs",

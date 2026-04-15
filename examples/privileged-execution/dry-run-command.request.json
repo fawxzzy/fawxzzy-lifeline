@@ -1,0 +1,63 @@
+{
+  "contract_version": "atlas.privileged-action.request.v1",
+  "request_id": "lifeline-dry-run-command-001",
+  "requested_at": "2026-04-13T20:47:00Z",
+  "worker_id": "worker-lifeline-01",
+  "assignment_id": "assignment-lifeline-dry-run-001",
+  "stack_lock_digest": "sha256:lifeline-stack-lock-001",
+  "tool_id": "scoped_write.dry_run",
+  "extension_id": null,
+  "registry_digest": "sha256:c7f3fc05b482e75f7eaabc5a4c486c6c13316394a7f3a23eb072d03dbf2239eb",
+  "source_refs": [
+    "repos/_stack/docs/examples/stack-worker-artifacts/assignment.example.json",
+    "repos/_stack/docs/examples/stack-worker-artifacts/status.running.example.json",
+    "repos/_stack/docs/runbooks/STACK-WORKER-FLOW.md"
+  ],
+  "action": {
+    "summary": "Run a dry-run command that prints the local Node runtime version.",
+    "operation": "scoped_write",
+    "command": ["node", "--version"],
+    "cwd": "."
+  },
+  "target_resources": ["node"],
+  "requested_capability": {
+    "contract_version": "atlas.capability.profile.v1",
+    "capability_profile_id": "cap-atlas-scoped-write-dry-run-v1",
+    "description": "ATLAS scoped-write dry-run capability profile.",
+    "filesystem_scopes": {
+      "read": ["."],
+      "write": [],
+      "create": [],
+      "deny": ["secrets/**", "repos/Verta-Core/**"]
+    },
+    "network_scopes": {
+      "mode": "none",
+      "allowed_domains": [],
+      "blocked_domains": []
+    },
+    "process_execution_permissions": {
+      "allow_spawn": true,
+      "allow_shell": false,
+      "allow_python": false,
+      "allowed_commands": ["node"],
+      "denied_commands": ["powershell", "cmd", "git"]
+    },
+    "package_manager_permissions": {
+      "allow_install": false,
+      "allow_update": false,
+      "allowed_managers": [],
+      "blocked_managers": ["npm", "pnpm", "yarn"]
+    },
+    "elevation_requirement": "per_action_approval",
+    "resource_budgets": {
+      "wall_clock_seconds": 120,
+      "cpu_seconds": 30,
+      "memory_mb": 256,
+      "disk_mb": 50
+    },
+    "allowed_data_classes": ["public", "internal", "machine_state"],
+    "audit_class": "standard"
+  },
+  "dry_run_output": "Would print the Node.js version without modifying files.",
+  "justification": "Exercise the dry-run command path under an explicit approval."
+}

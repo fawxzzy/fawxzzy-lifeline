@@ -30,3 +30,13 @@ Link related pull requests whenever possible.
   - Short-circuiting unhealthy proof states into generic CLI failure output can drop the proof contract and incorrectly force non-zero exits for operator-facing proof status.
 - WHY it changed:
   - Keeps operator status reporting readable and stable while preserving fail-closed behavior for explicit proof-gate use cases.
+
+## 2026-04-13
+
+- WHAT changed:
+  - Added a new `lifeline execute` command that loads a capability profile, privileged-action request, and approval receipt from local JSON files.
+  - Implemented read-only filesystem inspection and dry-run command execution paths with local receipt writing under `.lifeline/receipts/`.
+  - Added example capability/request/approval inputs and a new privileged-execution doc surface.
+- WHY it changed:
+  - Lifeline needed a first real execution surface for capability- and approval-backed work without introducing ambient admin rights.
+  - Receipt-backed execution keeps the runtime path explicit, local, and auditable.

@@ -6,6 +6,7 @@ declare namespace NodeJS {
 
 declare module "node:fs/promises" {
   export function readFile(path: string, encoding: string): Promise<string>;
+  export function readFile(path: string): Promise<string>;
   export function writeFile(
     path: string,
     data: string,
@@ -33,10 +34,16 @@ declare module "node:fs/promises" {
       | {
           name: string;
           isDirectory(): boolean;
+          isFile(): boolean;
         }
     >
   >;
   export function readlink(path: string): Promise<string>;
+  export function stat(path: string): Promise<{
+    size: number;
+    isDirectory(): boolean;
+    isFile(): boolean;
+  }>;
 }
 
 declare module "node:fs" {
@@ -55,8 +62,28 @@ declare module "node:path" {
     dirname: (path: string) => string;
     basename: (path: string) => string;
     join: (...paths: string[]) => string;
+    isAbsolute: (path: string) => boolean;
+    relative: (from: string, to: string) => string;
   };
   export default path;
+}
+
+declare module "node:crypto" {
+  export function createHash(algorithm: string): {
+    update(
+      data: string,
+      inputEncoding?: string,
+    ): {
+      digest(encoding: "hex"): string;
+    };
+    update(data: Uint8Array): {
+      digest(encoding: "hex"): string;
+    };
+  };
+}
+
+declare module "node:os" {
+  export function hostname(): string;
 }
 
 declare module "node:child_process" {

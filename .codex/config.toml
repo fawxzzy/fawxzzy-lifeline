@@ -1,0 +1,32 @@
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+personality = "pragmatic"
+
+[windows]
+codex_command = "%USERPROFILE%/.codex/.sandbox-bin/codex.exe"
+sandbox = "workspace-write"
+approval_policy = "never"
+
+[runner]
+base_ref = "main"
+branch_prefix = "codex/"
+inbox_dir = "../../runtime/codex/inbox/lifeline"
+archive_dir = "../../runtime/codex/archive/lifeline"
+logs_dir = "../../runtime/codex/logs/lifeline"
+worktree_root = "../../runtime/codex/worktrees/lifeline"
+exports_dir = "../../packages/snapshots/lifeline"
+adapter_contract = ".codex/repo-adapter.json"
+poll_interval_seconds = 5
+settle_seconds = 2
+auto_commit = true
+skip_push = true
+cleanup_worktree_on_success = false
+fetch_origin = false
+
+[exports]
+patch = true
+bundle = false
+
+[git]
+author_name = "Codex Inbox Runner"
+author_email = "codex-inbox@local"

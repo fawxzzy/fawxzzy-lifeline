@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { runDownCommand } from "./commands/down.js";
+import { runExecuteCommand } from "./commands/execute.js";
 import { runLogsCommand } from "./commands/logs.js";
 import { runResolveCommand } from "./commands/resolve.js";
 import { runRestartCommand } from "./commands/restart.js";
 import { runRestoreCommand } from "./commands/restore.js";
-import { runStatusCommand } from "./commands/status.js";
 import { runStartupCommand } from "./commands/startup.js";
+import { runStatusCommand } from "./commands/status.js";
 import { runUpCommand } from "./commands/up.js";
 import { runValidateCommand } from "./commands/validate.js";
 import { LifelineError } from "./core/errors.js";
@@ -13,7 +14,7 @@ import { runSupervisor } from "./core/supervisor.js";
 
 function printUsage(): void {
   console.log(
-    "Lifeline v1 + Wave 2 startup contract\n\nUsage:\n  lifeline validate <manifest-path> [--playbook-path <path>]\n  lifeline resolve <manifest-path> [--playbook-path <path>]\n  lifeline up <manifest-path> [--playbook-path <path>]\n  lifeline down <app-name>\n  lifeline status <app-name> [--proof|--proof-text] [--proof-gate]\n  lifeline logs <app-name> [line-count]\n  lifeline restart <app-name> [--playbook-path <path>]\n  lifeline restore\n  lifeline startup <enable|disable|status> [--dry-run]",
+    "Lifeline v1 + Wave 2 startup and execution contracts\n\nUsage:\n  lifeline validate <manifest-path> [--playbook-path <path>]\n  lifeline resolve <manifest-path> [--playbook-path <path>]\n  lifeline up <manifest-path> [--playbook-path <path>]\n  lifeline down <app-name>\n  lifeline status <app-name> [--proof|--proof-text] [--proof-gate]\n  lifeline logs <app-name> [line-count]\n  lifeline restart <app-name> [--playbook-path <path>]\n  lifeline restore\n  lifeline startup <enable|disable|status> [--dry-run]\n  lifeline execute <request-path> --capability-profile <path> --approval-receipt <path> [--receipt-dir <path>]",
   );
 }
 
@@ -76,7 +77,8 @@ function parsePlaybookOption(args: string[]): {
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
-  const { target, option, playbookPath, statusProofMode, enforceProofGate } = parsePlaybookOption(rest);
+  const { target, option, playbookPath, statusProofMode, enforceProofGate } =
+    parsePlaybookOption(rest);
 
   if (!command || command === "--help" || command === "-h") {
     printUsage();
@@ -147,6 +149,8 @@ async function main(argv: string[]): Promise<number> {
       return runRestoreCommand();
     case "startup":
       return runStartupCommand(target, option);
+    case "execute":
+      return runExecuteCommand(rest);
     case "supervise":
       if (!target) {
         console.error("Missing app name.");

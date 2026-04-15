@@ -48,6 +48,19 @@ Runtime behavior:
 
 Logs remain file-based at `.lifeline/logs/<app>.log` and include both app output and supervisor lifecycle events.
 
+## 5. Read-only privileged execution surface
+
+Lifeline also exposes a narrow execution lane for capability-backed, approval-backed work:
+
+- request, approval, and capability profile are loaded from local JSON files
+- read-only filesystem inspection is allowed when the granted scope includes the target paths
+- dry-run command execution is allowed when the approval and capability profile both allow the command
+- blocked, rejected, and expired attempts still emit a receipt
+- receipts are written locally and are part of the auditable trail
+- worker-originated requests may carry `source_refs` to `_stack` assignment, status, merge, or handoff artifacts, and Lifeline preserves those refs in the receipt trail
+
+This surface is intentionally not ambient admin. It is a receipt-backed executor for bounded read-only and dry-run actions only.
+
 ## Startup backend boundary
 
 The merged Wave 2 contract provides startup intent/state plus registered machine-local installers behind one seam:

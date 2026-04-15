@@ -17,6 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify": "pnpm typecheck && pnpm build && pnpm test:privileged-execution-bridge && pnpm test:privileged-execution-repair",
     "check": "biome check .",
     "format": "biome format --write .",
     "validate:fitness": "node dist/cli.js validate examples/fitness-app.lifeline.yml",
@@ -62,6 +63,9 @@
     "smoke:runtime:restore-missing-env-file": "node scripts/smoke-runtime-restore-missing-env-file.mjs",
     "test:startup-deterministic": "node scripts/test-wave2-startup-deterministic.mjs",
     "test:startup-roundtrip": "node scripts/test-startup-roundtrip-windows-deterministic.mjs",
+    "test:privileged-execution-bridge": "node scripts/test-privileged-execution-worker-bridge-deterministic.mjs",
+    "test:privileged-execution-repair": "node scripts/test-privileged-execution-receipt-repair-deterministic.mjs",
+    "repair:privileged-receipts": "node scripts/repair-privileged-execution-receipts.mjs",
     "verify:startup-roundtrip": "pnpm lifeline startup enable && pnpm lifeline startup status && pnpm lifeline startup disable",
     "smoke:runtime:restart-missing-required-env": "node scripts/smoke-runtime-restart-missing-required-env.mjs",
     "smoke:runtime:restore-missing-required-env": "node scripts/smoke-runtime-restore-missing-required-env.mjs",

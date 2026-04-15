@@ -12,6 +12,7 @@ Lifeline provides a boring, low-maintenance way to describe how an app should be
 - A home for a small, explicit app manifest contract.
 - A file-based config resolver that can optionally read Playbook archetype exports from a local checkout.
 - A runtime slice that can `resolve`, `up`, `down`, `status`, `logs`, `restart`, `restore`, `startup`, and `validate` one app on one machine.
+- A narrow capability-backed execution surface that can `execute` read-only inspections and dry-run commands with receipts.
 - Fixture-based smoke paths that verify manifest-only runtime behavior and Playbook-backed resolution without depending on an external Playbook repo.
 
 ## What Lifeline is not
@@ -43,8 +44,13 @@ pnpm lifeline restore
 pnpm lifeline startup status
 pnpm lifeline startup enable
 pnpm lifeline startup disable
+pnpm lifeline execute examples/privileged-execution/read-only-scan.request.json \
+  --capability-profile examples/privileged-execution/capability-profile.json \
+  --approval-receipt examples/privileged-execution/read-only-scan.approval.json
 pnpm lifeline down runtime-smoke-app
 ```
+
+Worker-originated requests can add `source_refs` for `_stack` assignment, status, merge, or handoff artifacts. Lifeline preserves those refs in the emitted receipt so the execution trail stays anchored to worker context instead of hidden transcripts.
 
 ## Optional Playbook integration
 
@@ -316,6 +322,7 @@ YAML parsing and env-file parsing are implemented inside the repo because the co
 - [Scope](docs/scope.md)
 - [Architecture](docs/architecture.md)
 - [Startup contract (Wave 2)](docs/startup-contract.md)
+- [Privileged execution](docs/privileged-execution.md)
 - [App manifest contract](docs/contracts/app-manifest.md)
 - [ADR 0001: Lifeline v1 scope](docs/adr/0001-lifeline-v1-scope.md)
 

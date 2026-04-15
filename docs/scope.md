@@ -12,6 +12,7 @@ Lifeline v1 includes:
 - manifest-driven app definitions
 - CLI validation for those manifests
 - local runtime commands: `up`, `down`, `status`, `logs`, `restart`, `restore`
+- read-only privileged execution with explicit approval receipts
 - support for the `next-web` and `node-web` archetypes
 - example manifests for the fitness app and Playbook UI
 - an in-repo fixture app used for runtime smoke verification
@@ -29,6 +30,7 @@ Lifeline v1 excludes:
 - webhooks
 - reverse proxies, domains, or TLS
 - hot reload/file watching workflows
+- ambient admin rights or unscoped privileged mutation
 
 ## Operating rules
 

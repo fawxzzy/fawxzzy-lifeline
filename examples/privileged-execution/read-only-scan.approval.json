@@ -1,0 +1,57 @@
+{
+  "contract_version": "atlas.approval.receipt.v1",
+  "approval_receipt_id": "approval-lifeline-readonly-001",
+  "request_id": "lifeline-read-only-scan-001",
+  "worker_id": "worker-lifeline-01",
+  "assignment_id": "assignment-lifeline-readonly-001",
+  "stack_lock_digest": "sha256:lifeline-stack-lock-001",
+  "tool_id": "read_only_scan",
+  "extension_id": null,
+  "registry_digest": "sha256:c7f3fc05b482e75f7eaabc5a4c486c6c13316394a7f3a23eb072d03dbf2239eb",
+  "approver": {
+    "kind": "system",
+    "name": "lifeline-policy-gate"
+  },
+  "approval_status": "approved",
+  "granted_scope": {
+    "contract_version": "atlas.capability.profile.v1",
+    "capability_profile_id": "cap-atlas-session-readonly-v1",
+    "description": "Root ATLAS read-only session capability profile.",
+    "filesystem_scopes": {
+      "read": ["."],
+      "write": [],
+      "create": [],
+      "deny": ["secrets/**", "repos/Verta-Core/**"]
+    },
+    "network_scopes": {
+      "mode": "none",
+      "allowed_domains": [],
+      "blocked_domains": []
+    },
+    "process_execution_permissions": {
+      "allow_spawn": true,
+      "allow_shell": false,
+      "allow_python": false,
+      "allowed_commands": ["node"],
+      "denied_commands": ["powershell", "cmd", "git"]
+    },
+    "package_manager_permissions": {
+      "allow_install": false,
+      "allow_update": false,
+      "allowed_managers": [],
+      "blocked_managers": ["npm", "pnpm", "yarn"]
+    },
+    "elevation_requirement": "per_action_approval",
+    "resource_budgets": {
+      "wall_clock_seconds": 120,
+      "cpu_seconds": 30,
+      "memory_mb": 256,
+      "disk_mb": 50
+    },
+    "allowed_data_classes": ["public", "internal", "machine_state"],
+    "audit_class": "standard"
+  },
+  "expiry_at": "2026-04-15T23:59:59Z",
+  "request_digest": "sha256:e2ec0383a814b39fab1eaf89b81285d2a60a166411a3241a3f553daf50a21f6e",
+  "issued_at": "2026-04-13T20:45:05Z"
+}
