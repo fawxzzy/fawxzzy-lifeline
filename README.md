@@ -2,6 +2,14 @@
 
 Lifeline is the opinionated, self-hosted local operator for manifest-defined apps. This repository is intentionally narrow: Lifeline v1 validates manifests, resolves optional Playbook defaults from disk, runs one stable local or staging-style instance on one machine, and includes the merged Wave 2 startup contract surface for deterministic `lifeline restore` startup intent management.
 
+## Wave 1 runtime foundation
+
+The repository now also carries the Wave 1 single-host runtime foundation under `infra/` and `runtime/`.
+
+- `infra/compose.yaml` defines the two-service host boundary: a pilot app on port `3000` and a Caddy reverse proxy on `8080`/`8443`.
+- `runtime/wave-1/pilot/` contains the minimal pilot app image and env contract.
+- `docs/architecture/wave-1-runtime-foundation.md` records the host contract, storage assumptions, and non-goals.
+
 ## Role in the stack
 
 Lifeline is the execution-oriented local operator in the broader Fawxzzy stack.
@@ -17,7 +25,7 @@ Lifeline stays intentionally narrower than the rest of the stack: it consumes ch
 - Git transport and upstream wiring are complete: `main` tracks `origin/main`.
 - The repo is ready for small baseline-governance PRs before further implementation work.
 - Current scope remains a local-first CLI/operator, not a hosted platform.
-- This baseline pass is intentionally non-architectural: no feature expansion, no contract widening, and no runtime behavior changes.
+- This baseline pass stays narrow: no control-plane expansion, no multi-host growth, and no ambient admin surface.
 
 ## Next milestone
 
@@ -38,6 +46,7 @@ Lifeline provides a boring, low-maintenance way to describe how an app should be
 - A file-based config resolver that can optionally read Playbook archetype exports from a local checkout.
 - A runtime slice that can `resolve`, `up`, `down`, `status`, `logs`, `restart`, `restore`, `startup`, and `validate` one app on one machine.
 - A narrow capability-backed execution surface that can `execute` read-only inspections and dry-run commands with receipts.
+- A narrow proof-backed receipt surface that can emit auditable `proof_passed` receipts from ATLAS UI proof summaries.
 - Fixture-based smoke paths that verify manifest-only runtime behavior and Playbook-backed resolution without depending on an external Playbook repo.
 
 ## What Lifeline is not
@@ -72,6 +81,9 @@ pnpm lifeline startup disable
 pnpm lifeline execute examples/privileged-execution/read-only-scan.request.json \
   --capability-profile examples/privileged-execution/capability-profile.json \
   --approval-receipt examples/privileged-execution/read-only-scan.approval.json
+pnpm lifeline proof-pass ../../runtime/atlas/ui-proof/fitness/latest.json \
+  --source-repo fitness \
+  --tranche F11
 pnpm lifeline down runtime-smoke-app
 ```
 
@@ -348,6 +360,7 @@ YAML parsing and env-file parsing are implemented inside the repo because the co
 - [Architecture](docs/architecture.md)
 - [Startup contract (Wave 2)](docs/startup-contract.md)
 - [Privileged execution](docs/privileged-execution.md)
+- [UI proof-passed receipt contract](docs/contracts/ui-proof-passed-receipt-contract.md)
 - [App manifest contract](docs/contracts/app-manifest.md)
 - [ADR 0001: Lifeline v1 scope](docs/adr/0001-lifeline-v1-scope.md)
 

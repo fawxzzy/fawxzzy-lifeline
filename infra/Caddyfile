@@ -1,0 +1,13 @@
+{
+  admin off
+  auto_https disable_redirects
+}
+
+http://localhost:8080 {
+  redir https://localhost:8443{uri} permanent
+}
+
+localhost:8443 {
+  tls internal
+  reverse_proxy pilot:3000
+}

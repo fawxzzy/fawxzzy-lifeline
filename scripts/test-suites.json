@@ -20,7 +20,8 @@
     "test-errors-contract-deterministic.mjs",
     "test-fitness-mirror-contract-deterministic.mjs",
     "test-startup-command-contract-deterministic.mjs",
-    "test-startup-command-windows-backend-deterministic.mjs"
+    "test-startup-command-windows-backend-deterministic.mjs",
+    "test-ui-proof-receipt-deterministic.mjs"
   ],
   "core": [
     "test-ensure-built-deterministic.mjs",

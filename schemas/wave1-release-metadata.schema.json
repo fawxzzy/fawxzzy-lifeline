@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:atlas:lifeline:wave1:release-metadata:v1",
+  "title": "Wave 1 Lifeline Release Metadata",
+  "type": "object",
+  "required": [
+    "contractVersion",
+    "releaseId",
+    "appName",
+    "artifactRef",
+    "route",
+    "envRefs",
+    "healthcheckPath",
+    "migrationHooks",
+    "rollbackTarget",
+    "dryRun",
+    "createdAt",
+    "validation"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "atlas.lifeline.release-metadata.v1"
+    },
+    "releaseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "appName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifactRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "route": {
+      "type": "object",
+      "required": [
+        "domain"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^/"
+        }
+      },
+      "additionalProperties": false
+    },
+    "envRefs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "healthcheckPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^/"
+    },
+    "migrationHooks": {
+      "type": "object",
+      "required": [
+        "preDeploy",
+        "postDeploy",
+        "rollback"
+      ],
+      "properties": {
+        "preDeploy": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "postDeploy": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rollback": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "rollbackTarget": {
+      "type": "object",
+      "required": [
+        "releaseId",
+        "artifactRef",
+        "strategy"
+      ],
+      "properties": {
+        "releaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "strategy": {
+          "enum": [
+            "redeploy",
+            "restore"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "dryRun": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "status",
+        "issues"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "passed",
+            "failed"
+          ]
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "message"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

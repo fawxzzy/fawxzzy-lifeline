@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "verify": "pnpm typecheck && pnpm build && pnpm test:privileged-execution-bridge && pnpm test:privileged-execution-repair",
+    "verify": "pnpm typecheck && pnpm build && pnpm test:privileged-execution-bridge && pnpm test:privileged-execution-repair && pnpm test:ui-proof-receipt",
     "check": "biome check .",
     "format": "biome format --write .",
     "validate:fitness": "node dist/cli.js validate examples/fitness-app.lifeline.yml",
@@ -65,6 +65,7 @@
     "test:startup-roundtrip": "node scripts/test-startup-roundtrip-windows-deterministic.mjs",
     "test:privileged-execution-bridge": "node scripts/test-privileged-execution-worker-bridge-deterministic.mjs",
     "test:privileged-execution-repair": "node scripts/test-privileged-execution-receipt-repair-deterministic.mjs",
+    "test:ui-proof-receipt": "node scripts/test-ui-proof-receipt-deterministic.mjs",
     "repair:privileged-receipts": "node scripts/repair-privileged-execution-receipts.mjs",
     "verify:startup-roundtrip": "pnpm lifeline startup enable && pnpm lifeline startup status && pnpm lifeline startup disable",
     "smoke:runtime:restart-missing-required-env": "node scripts/smoke-runtime-restart-missing-required-env.mjs",

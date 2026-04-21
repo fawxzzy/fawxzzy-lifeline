@@ -1,0 +1,35 @@
+services:
+  pilot:
+    build:
+      context: ../runtime/wave-1/pilot
+      dockerfile: Dockerfile
+    env_file:
+      - ../runtime/wave-1/pilot/pilot.env
+    expose:
+      - "3000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen("http://127.0.0.1:3000/healthz").read()
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2.8.4-alpine
+    depends_on:
+      pilot:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../runtime/wave-1/caddy-data:/data
+      - ../runtime/wave-1/caddy-config:/config
+    restart: unless-stopped

@@ -1,0 +1,30 @@
+{
+  "contractVersion": "atlas.lifeline.deploy-contract.v1",
+  "appName": "lifeline-pilot",
+  "imageRef": "ghcr.io/fawxzzy/lifeline-pilot@sha256:111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000",
+  "route": {
+    "domain": "pilot.lifeline.internal",
+    "path": "/"
+  },
+  "envRefs": [
+    "secret://lifeline/pilot/database-url",
+    "config://lifeline/pilot/feature-flags"
+  ],
+  "healthcheckPath": "/api/health",
+  "migrationHooks": {
+    "preDeploy": [
+      "pnpm db:migrate:status"
+    ],
+    "postDeploy": [
+      "pnpm smoke:release"
+    ],
+    "rollback": [
+      "pnpm db:migrate:rollback"
+    ]
+  },
+  "rollbackTarget": {
+    "releaseId": "release-20260421-0001",
+    "artifactRef": "ghcr.io/fawxzzy/lifeline-pilot@sha256:00000000000000000000deadbeefdeadbeefdeadbeefdeadbeefdeadbeef0000",
+    "strategy": "redeploy"
+  }
+}

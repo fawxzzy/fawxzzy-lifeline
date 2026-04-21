@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:atlas:lifeline:wave1:deploy-contract:v1",
+  "title": "Wave 1 Lifeline Deploy Contract",
+  "type": "object",
+  "required": [
+    "contractVersion",
+    "appName",
+    "route",
+    "envRefs",
+    "healthcheckPath",
+    "migrationHooks",
+    "rollbackTarget"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "atlas.lifeline.deploy-contract.v1"
+    },
+    "appName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifactRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "imageRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "route": {
+      "type": "object",
+      "required": [
+        "domain"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^/"
+        }
+      },
+      "additionalProperties": false
+    },
+    "envRefs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "healthcheckPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^/"
+    },
+    "migrationHooks": {
+      "type": "object",
+      "required": [
+        "preDeploy",
+        "postDeploy",
+        "rollback"
+      ],
+      "properties": {
+        "preDeploy": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "postDeploy": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rollback": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "rollbackTarget": {
+      "type": "object",
+      "required": [
+        "releaseId",
+        "artifactRef",
+        "strategy"
+      ],
+      "properties": {
+        "releaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "strategy": {
+          "enum": [
+            "redeploy",
+            "restore"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "anyOf": [
+    {
+      "required": [
+        "artifactRef"
+      ]
+    },
+    {
+      "required": [
+        "imageRef"
+      ]
+    }
+  ],
+  "additionalProperties": false
+}
