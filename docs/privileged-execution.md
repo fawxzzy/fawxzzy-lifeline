@@ -2,6 +2,9 @@
 
 Lifeline now exposes a narrow read-only execution surface for capability-backed actions. The command is designed for local use only and does not grant ambient admin rights.
 
+The canonical contract lineage for capability profiles, requests, approvals, and receipts lives in [`docs/contracts/privileged-execution-contract.md`](./contracts/privileged-execution-contract.md).
+This page is the operator-facing usage guide.
+
 ## Command
 
 ```bash

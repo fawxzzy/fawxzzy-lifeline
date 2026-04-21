@@ -2,6 +2,31 @@
 
 Lifeline is the opinionated, self-hosted local operator for manifest-defined apps. This repository is intentionally narrow: Lifeline v1 validates manifests, resolves optional Playbook defaults from disk, runs one stable local or staging-style instance on one machine, and includes the merged Wave 2 startup contract surface for deterministic `lifeline restore` startup intent management.
 
+## Role in the stack
+
+Lifeline is the execution-oriented local operator in the broader Fawxzzy stack.
+
+- Atlas is the stack coordination layer and policy surface.
+- Playbook is the human-facing workflow and export producer.
+- Fitness is a representative application surface that Lifeline can validate, resolve, and run through its manifest contract.
+
+Lifeline stays intentionally narrower than the rest of the stack: it consumes checked-in config, executes governed local operations, and emits explicit runtime state and receipts. It does not own portfolio orchestration, hosted control planes, or ambient admin UX.
+
+## Repository status
+
+- Git transport and upstream wiring are complete: `main` tracks `origin/main`.
+- The repo is ready for small baseline-governance PRs before further implementation work.
+- Current scope remains a local-first CLI/operator, not a hosted platform.
+- This baseline pass is intentionally non-architectural: no feature expansion, no contract widening, and no runtime behavior changes.
+
+## Next milestone
+
+The next slice after repo hygiene is a narrow architecture or contract slice inside Lifeline itself, keeping the sequence explicit:
+
+1. repo transport and setup
+2. repo hygiene and governance
+3. focused architecture slices
+
 ## Why Lifeline exists
 
 Lifeline provides a boring, low-maintenance way to describe how an app should be installed, built, started, stopped, checked, and inspected on a self-hosted machine. It is deliberately not a hot-reload workflow replacement and deliberately not a hosted platform clone.

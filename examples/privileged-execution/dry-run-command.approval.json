@@ -51,7 +51,7 @@
     "allowed_data_classes": ["public", "internal", "machine_state"],
     "audit_class": "standard"
   },
-  "expiry_at": "2026-04-15T23:59:59Z",
+  "expiry_at": "2099-12-31T23:59:59Z",
   "request_digest": "sha256:f99a645bb54099b295e9fde07bf28cc4e47a314d44b4622516a40453b4dd17e3",
   "issued_at": "2026-04-13T20:47:05Z"
 }

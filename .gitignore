@@ -1,9 +1,20 @@
 node_modules/
 dist/
 coverage/
-.DS_Store
 *.log
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 .pnpm-store/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.env
+.env.local
+.env.*.local
 .lifeline/
 
 # Playbook runtime state

@@ -269,7 +269,7 @@ async function createWorkspaceWriteScenario({
     },
     approval_status: "approved",
     granted_scope: tool.capability_profile,
-    expiry_at: "2026-04-15T23:59:59Z",
+    expiry_at: "2099-12-31T23:59:59Z",
     issued_at: "2026-04-14T12:00:05Z",
     request_digest: "",
   };
