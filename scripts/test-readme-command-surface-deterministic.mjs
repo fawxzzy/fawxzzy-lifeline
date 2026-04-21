@@ -144,6 +144,7 @@ async function main() {
   }
 
   const expectedDocumentedCommands = [
+    'doctor',
     'validate',
     'resolve',
     'up',

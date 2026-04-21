@@ -5,7 +5,12 @@ import os from "node:os";
 import path from "node:path";
 
 import { ValidationError } from "./errors.js";
-import { stableJsonStringify, writeJsonFile } from "./receipt-store.js";
+import {
+  normalizeCapturedText,
+  normalizeReceiptPath,
+  stableJsonStringify,
+  writeJsonFile,
+} from "./receipt-store.js";
 import { loadGovernedRegistry } from "./tool-registry.js";
 import type { GovernedRegistryBundle } from "./tool-registry.js";
 
@@ -174,6 +179,10 @@ interface PrivilegedActionReceipt {
   capability_profile_digest: string;
   approval_digest: string;
   result: ResultState;
+  failure?: {
+    category: "config_error" | "environment_error" | "runtime_error";
+    first_remediation_step: string;
+  };
   blocked_reason?: string;
   inspection?: {
     cwd: string;
@@ -199,6 +208,8 @@ interface ExecutionResult {
   receiptPath: string;
   exitCode: number;
 }
+
+type ReceiptFailureCategory = NonNullable<PrivilegedActionReceipt["failure"]>["category"];
 
 export interface RepairPrivilegedActionReceiptResult {
   status: "repaired" | "replay_required";
@@ -785,6 +796,20 @@ function validateReceipt(value: unknown): PrivilegedActionReceipt {
       "receipt.approval_digest",
     ),
     result: asString(value.result, "receipt.result") as ResultState,
+    ...(isRecord(value.failure)
+      ? {
+          failure: {
+            category: asString(
+              value.failure.category,
+              "receipt.failure.category",
+            ) as ReceiptFailureCategory,
+            first_remediation_step: asString(
+              value.failure.first_remediation_step,
+              "receipt.failure.first_remediation_step",
+            ),
+          },
+        }
+      : {}),
     ...(typeof value.blocked_reason === "string"
       ? { blocked_reason: value.blocked_reason }
       : {}),
@@ -838,6 +863,75 @@ function approvalIsExpired(approval: ApprovalReceipt): boolean {
 
 function digestValue(value: unknown): string {
   return `sha256:${createHash("sha256").update(stableJsonStringify(value)).digest("hex")}`;
+}
+
+function buildFailureSurface(
+  category: ReceiptFailureCategory,
+  firstRemediationStep: string,
+): NonNullable<PrivilegedActionReceipt["failure"]> {
+  return {
+    category,
+    first_remediation_step: firstRemediationStep,
+  };
+}
+
+const CONFIG_FAILURE_REMEDIATION =
+  "Review the request, approval, and capability profile so they match the governed registry entry, then rerun.";
+const ENVIRONMENT_FAILURE_REMEDIATION =
+  "Run Lifeline from a repository root with stack.yaml and a reachable workspace, or set ATLAS_ROOT to the correct stack root.";
+const RUNTIME_FAILURE_REMEDIATION =
+  "Inspect the surfaced stdout, stderr, or filesystem error, fix the underlying issue, and rerun.";
+
+function projectReceiptIdentity(
+  receipt: Omit<PrivilegedActionReceipt, "receipt_id">,
+): unknown {
+  const {
+    executed_at: _executedAt,
+    host: _host,
+    command_result,
+    write_results,
+    ...rest
+  } = receipt;
+
+  return {
+    ...rest,
+    ...(command_result
+      ? {
+          command_result: {
+            command: command_result.command,
+            cwd: command_result.cwd,
+            exit_code: command_result.exit_code,
+            stdout: normalizeCapturedText(command_result.stdout),
+            stderr: normalizeCapturedText(command_result.stderr),
+          },
+        }
+      : {}),
+    ...(write_results
+      ? {
+          write_results: write_results.map((entry) => ({
+            workspace_root: entry.workspace_root,
+            target_path: entry.target_path,
+            ...(entry.prior_sha256 ? { prior_sha256: entry.prior_sha256 } : {}),
+          })),
+        }
+      : {}),
+  };
+}
+
+function digestReceiptIdentity(
+  receipt: Omit<PrivilegedActionReceipt, "receipt_id">,
+): string {
+  return `sha256:${createHash("sha256").update(stableJsonStringify(projectReceiptIdentity(receipt)), "utf8").digest("hex")}`;
+}
+
+function finalizeReceipt(
+  receipt: Omit<PrivilegedActionReceipt, "receipt_id">,
+): PrivilegedActionReceipt {
+  const receiptId = digestReceiptIdentity(receipt);
+  return {
+    ...receipt,
+    receipt_id: receiptId,
+  };
 }
 
 function compareJson(left: unknown, right: unknown): boolean {
@@ -1079,13 +1173,15 @@ async function runDryRunCommand(
     };
 
     child.stdout.on("data", (chunk) => {
-      stdout += String(chunk);
+      stdout += normalizeCapturedText(String(chunk));
     });
     child.stderr.on("data", (chunk) => {
-      stderr += String(chunk);
+      stderr += normalizeCapturedText(String(chunk));
     });
     child.on("error", (error) => {
-      stderr += error instanceof Error ? error.message : String(error);
+      stderr += normalizeCapturedText(
+        error instanceof Error ? error.message : String(error),
+      );
       finish(1);
     });
     child.on("exit", (code) => {
@@ -1100,10 +1196,10 @@ function buildBlockedReceipt(
   capability: CapabilityProfile,
   executionMode: ExecutionMode,
   blockedReason: string,
+  failure: NonNullable<PrivilegedActionReceipt["failure"]>,
 ): PrivilegedActionReceipt {
-  return {
+  return finalizeReceipt({
     contract_version: RECEIPT_CONTRACT_VERSION,
-    receipt_id: `receipt-${request.request_id}-${Date.now()}`,
     executed_at: new Date().toISOString(),
     worker_id: request.worker_id,
     assignment_id: request.assignment_id,
@@ -1129,9 +1225,10 @@ function buildBlockedReceipt(
     capability_profile_digest: digestValue(capability),
     approval_digest: digestValue(approval),
     result: "blocked",
+    failure,
     blocked_reason: blockedReason,
     execution_notes: "No execution was performed.",
-  };
+  });
 }
 
 async function writeReceipt(
@@ -1144,7 +1241,7 @@ async function writeReceipt(
 }
 
 function relativeAtlasRef(atlasRoot: string, targetPath: string): string {
-  return normalizePath(path.relative(atlasRoot, path.resolve(targetPath)));
+  return normalizeReceiptPath(path.relative(atlasRoot, path.resolve(targetPath)));
 }
 
 function deriveSessionId(options: {
@@ -1570,6 +1667,7 @@ export async function repairPrivilegedActionReceipt(options: {
     capability_profile_digest: digestValue(capabilityPayload),
     approval_digest: digestValue(approval),
     result: originalReceipt.result,
+    ...(originalReceipt.failure ? { failure: originalReceipt.failure } : {}),
     ...(originalReceipt.blocked_reason ? { blocked_reason: originalReceipt.blocked_reason } : {}),
     ...(originalReceipt.inspection ? { inspection: originalReceipt.inspection } : {}),
     ...(originalReceipt.command_result ? { command_result: originalReceipt.command_result } : {}),
@@ -1916,6 +2014,7 @@ export async function executePrivilegedAction(options: {
       capability,
       executionMode,
       governedExecutionError,
+      buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
     );
     const receiptPath = await writeReceiptAndEmitObservation({
       atlasRoot,
@@ -1939,6 +2038,7 @@ export async function executePrivilegedAction(options: {
       capability,
       executionMode,
       `approval_status is ${approval.approval_status}.`,
+      buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
     );
     const receiptPath = await writeReceiptAndEmitObservation({
       atlasRoot,
@@ -1959,6 +2059,7 @@ export async function executePrivilegedAction(options: {
       capability,
       executionMode,
       "approval has expired.",
+      buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
     );
     const receiptPath = await writeReceiptAndEmitObservation({
       atlasRoot,
@@ -1979,6 +2080,7 @@ export async function executePrivilegedAction(options: {
       capability,
       executionMode,
       "approved actions must include a granted scope.",
+      buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
     );
     const receiptPath = await writeReceiptAndEmitObservation({
       atlasRoot,
@@ -2009,6 +2111,7 @@ export async function executePrivilegedAction(options: {
           capability,
           executionMode,
           `target path '${relativePath}' is outside the granted read scope.`,
+          buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
         );
         const receiptPath = await writeReceiptAndEmitObservation({
           atlasRoot,
@@ -2030,9 +2133,8 @@ export async function executePrivilegedAction(options: {
       records.push(await inspectPath(cwd, targetPath));
     }
 
-    const receipt: PrivilegedActionReceipt = {
+    const receipt = finalizeReceipt({
       contract_version: RECEIPT_CONTRACT_VERSION,
-      receipt_id: `receipt-${request.request_id}-${Date.now()}`,
       executed_at: new Date().toISOString(),
       worker_id: request.worker_id,
       assignment_id: request.assignment_id,
@@ -2063,7 +2165,7 @@ export async function executePrivilegedAction(options: {
         records,
       },
       execution_notes: "Read-only filesystem inspection completed.",
-    };
+    });
 
     const receiptPath = await writeReceiptAndEmitObservation({
       atlasRoot,
@@ -2085,6 +2187,7 @@ export async function executePrivilegedAction(options: {
         capability,
         executionMode,
         "workspace_file_apply requires a resolved ATLAS root.",
+        buildFailureSurface("environment_error", ENVIRONMENT_FAILURE_REMEDIATION),
       );
       const receiptPath = await writeReceiptAndEmitObservation({
         atlasRoot,
@@ -2112,6 +2215,7 @@ export async function executePrivilegedAction(options: {
         capability,
         executionMode,
         "write target escapes the declared workspace root.",
+        buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
       );
       const receiptPath = await writeReceiptAndEmitObservation({
         atlasRoot,
@@ -2136,6 +2240,7 @@ export async function executePrivilegedAction(options: {
         capability,
         executionMode,
         `target path '${targetPathRef}' is outside the granted workspace write scope.`,
+        buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
       );
       const receiptPath = await writeReceiptAndEmitObservation({
         atlasRoot,
@@ -2159,6 +2264,7 @@ export async function executePrivilegedAction(options: {
         capability,
         executionMode,
         `workspace root '${workspaceRelative}' is outside the granted workspace scope.`,
+        buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
       );
       const receiptPath = await writeReceiptAndEmitObservation({
         atlasRoot,
@@ -2186,9 +2292,8 @@ export async function executePrivilegedAction(options: {
       }
       await writeFile(targetPath, request.action.write_content ?? "", "utf8");
     } catch (error) {
-      const receipt: PrivilegedActionReceipt = {
+      const receipt = finalizeReceipt({
         contract_version: RECEIPT_CONTRACT_VERSION,
-        receipt_id: `receipt-${request.request_id}-${Date.now()}`,
         executed_at: appliedAt,
         worker_id: request.worker_id,
         assignment_id: request.assignment_id,
@@ -2214,11 +2319,15 @@ export async function executePrivilegedAction(options: {
         capability_profile_digest: digestValue(capability),
         approval_digest: digestValue(approval),
         result: "failed",
+        failure: buildFailureSurface(
+          "runtime_error",
+          RUNTIME_FAILURE_REMEDIATION,
+        ),
         execution_notes:
           error instanceof Error
             ? `Workspace file apply failed: ${error.message}`
             : `Workspace file apply failed: ${String(error)}`,
-      };
+      });
       const receiptPath = await writeReceiptAndEmitObservation({
         atlasRoot,
         receiptDir,
@@ -2231,9 +2340,8 @@ export async function executePrivilegedAction(options: {
       return { receipt, receiptPath, exitCode: 1 };
     }
 
-    const receipt: PrivilegedActionReceipt = {
+    const receipt = finalizeReceipt({
       contract_version: RECEIPT_CONTRACT_VERSION,
-      receipt_id: `receipt-${request.request_id}-${Date.now()}`,
       executed_at: appliedAt,
       worker_id: request.worker_id,
       assignment_id: request.assignment_id,
@@ -2265,13 +2373,24 @@ export async function executePrivilegedAction(options: {
           target_path: targetPathRef,
           applied_at: appliedAt,
           ...(priorSha256 ? { prior_sha256: priorSha256 } : {}),
-          ...(backupPath
-            ? { backup_ref: relativeAtlasRef(atlasRoot, backupPath) }
-            : {}),
         },
       ],
       execution_notes: "Workspace file apply completed inside the declared session-owned workspace root.",
-    };
+    });
+    if (backupPath) {
+      const writeResult = receipt.write_results?.[0];
+      if (!writeResult) {
+        throw new Error(
+          "workspace_file_apply receipt is missing write_results[0] after finalization.",
+        );
+      }
+      receipt.write_results = [
+        {
+          ...writeResult,
+          backup_ref: relativeAtlasRef(atlasRoot, backupPath),
+        },
+      ];
+    }
 
     const receiptPath = await writeReceiptAndEmitObservation({
       atlasRoot,
@@ -2292,6 +2411,7 @@ export async function executePrivilegedAction(options: {
       capability,
       executionMode,
       "requested command is not allowed by the granted execution scope.",
+      buildFailureSurface("config_error", CONFIG_FAILURE_REMEDIATION),
     );
     const receiptPath = await writeReceiptAndEmitObservation({
       atlasRoot,
@@ -2314,9 +2434,8 @@ export async function executePrivilegedAction(options: {
 
   const result: ResultState =
     commandResult.exitCode === 0 ? "succeeded" : "failed";
-  const receipt: PrivilegedActionReceipt = {
+  const receipt = finalizeReceipt({
     contract_version: RECEIPT_CONTRACT_VERSION,
-    receipt_id: `receipt-${request.request_id}-${Date.now()}`,
     executed_at: new Date().toISOString(),
     worker_id: request.worker_id,
     assignment_id: request.assignment_id,
@@ -2349,11 +2468,19 @@ export async function executePrivilegedAction(options: {
       stdout: commandResult.stdout,
       stderr: commandResult.stderr,
     },
+    ...(result === "failed"
+      ? {
+          failure: buildFailureSurface(
+            "runtime_error",
+            RUNTIME_FAILURE_REMEDIATION,
+          ),
+        }
+      : {}),
     execution_notes:
       result === "succeeded"
         ? "Dry-run command completed without mutation authority."
         : "Dry-run command returned a non-zero exit code.",
-  };
+  });
 
   const receiptPath = await writeReceiptAndEmitObservation({
     atlasRoot,

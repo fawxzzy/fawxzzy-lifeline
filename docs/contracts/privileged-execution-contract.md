@@ -46,6 +46,7 @@ The following keys are the canonical lineage bridge and must stay explicit acros
 - `registry_digest`
 - `automation_level`
 - `source_refs`
+- `failure.category` and `failure.first_remediation_step` on blocked or failed receipts
 
 ## Status semantics
 
@@ -64,6 +65,7 @@ Those remain parked until owner-repo evidence is stronger.
 - A privileged-action receipt must record what actually happened, including blocked attempts.
 - Rejected and expired approvals remain first-class approval outcomes, not independent shared event families.
 - `source_refs` may point to `_stack` artifacts, but Lifeline echoes them without redefining their upstream meaning.
+- Path-like receipt refs emitted by Lifeline are normalized to forward slashes before write so Windows and POSIX receipts stay diffable, while upstream `source_refs` remain unchanged.
 
 ## Canonical reader guidance
 

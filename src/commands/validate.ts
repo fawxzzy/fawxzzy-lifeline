@@ -7,6 +7,10 @@ import {
 import { ManifestLoadError, ValidationError } from "../core/errors.js";
 import { loadManifestFile } from "../core/load-manifest.js";
 import { resolveManifestConfig } from "../core/resolve-config.js";
+import {
+  formatPreflightFailure,
+  runPreflightChecks,
+} from "../core/preflight.js";
 
 function filePathFromImportMetaUrl(moduleUrl: string): string {
   const pathname = decodeURIComponent(new URL(moduleUrl).pathname);
@@ -42,6 +46,17 @@ export async function runValidateCommand(
   playbookPath?: string,
 ): Promise<number> {
   try {
+    const preflight = await runPreflightChecks();
+    if (!preflight.ok) {
+      for (const line of formatPreflightFailure(
+        preflight,
+        "Validation preflight",
+      )) {
+        console.error(line);
+      }
+      return 1;
+    }
+
     if (playbookPath || process.env.LIFELINE_PLAYBOOK_PATH) {
       const resolved = await resolveManifestConfig(
         playbookPath ? { manifestPath, playbookPath } : { manifestPath },

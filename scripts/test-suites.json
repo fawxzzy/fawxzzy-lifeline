@@ -34,6 +34,7 @@
     "test-process-manager-find-listener-pid-deterministic.mjs",
     "test-process-manager-stop-process-deterministic.mjs",
     "test-process-manager-wait-for-port-clear-deterministic.mjs",
+    "test-preflight-deterministic.mjs",
     "test-resolve-config-deterministic.mjs",
     "test-resolve-playbook-path-deterministic.mjs",
     "test-resolve-working-directory-deterministic.mjs",

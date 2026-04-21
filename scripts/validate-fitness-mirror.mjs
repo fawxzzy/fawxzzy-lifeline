@@ -1,19 +1,23 @@
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-
-import { validateFitnessMirrorManifestFile } from '../dist/contracts/fitness-mirror.js';
+import { spawnSync } from "node:child_process";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const mirrorDisplayPath = 'examples/fitness-app.lifeline.yml';
-const mirrorPath = resolve(scriptDir, '..', mirrorDisplayPath);
-const issues = await validateFitnessMirrorManifestFile(mirrorPath);
+const repoRoot = resolve(scriptDir, "..");
+const cliPath = resolve(repoRoot, "dist", "cli.js");
+const mirrorDisplayPath = "examples/fitness-app.lifeline.yml";
 
-if (issues.length > 0) {
-  console.error(`Fitness mirror validation failed for ${mirrorDisplayPath}:`);
-  for (const issue of issues) {
-    console.error(`- ${issue.path}: ${issue.message}`);
-  }
-  process.exit(1);
+const result = spawnSync(process.execPath, [cliPath, "validate", mirrorDisplayPath], {
+  cwd: repoRoot,
+  encoding: "utf8",
+});
+
+if (result.stdout) {
+  process.stdout.write(result.stdout);
 }
 
-console.log(`Fitness mirror validation passed for ${mirrorDisplayPath}.`);
+if (result.stderr) {
+  process.stderr.write(result.stderr);
+}
+
+process.exit(result.status ?? 1);

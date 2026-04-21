@@ -333,6 +333,20 @@ async function main() {
       ),
       expectedExitCode: 0,
     },
+    await createMutatedScenario({
+      name: "dry-run-crlf-output",
+      baseRequestName: "dry-run-command.request.json",
+      baseApprovalName: "dry-run-command.approval.json",
+      baseCapabilityName: "capability-profile.scoped-write-dry-run.json",
+      mutate: ({ request }) => {
+        request.action.command = [
+          "node",
+          "-e",
+          "process.stdout.write('line1\\r\\nline2\\r\\n')",
+        ];
+      },
+      expectedExitCode: 0,
+    }),
     {
       name: "dry-run-rejected",
       requestPath: path.join(examplesRoot, "dry-run-command.request.json"),
@@ -430,6 +444,10 @@ async function main() {
         `${scenario.name}: receipt.source_refs did not preserve the request source_refs`,
       );
       assert(
+        receipt.receipt_id.startsWith("sha256:"),
+        `${scenario.name}: receipt_id should be deterministic`,
+      );
+      assert(
         receipt.worker_id === "worker-lifeline-01",
         `${scenario.name}: worker_id mismatch`,
       );
@@ -461,6 +479,10 @@ async function main() {
         receipt.result === "succeeded",
         `${scenario.name}: expected succeeded receipt`,
       );
+      assert(
+        !receipt.failure,
+        `${scenario.name}: successful receipts should not carry failure metadata`,
+      );
       if (scenario.name === "read-only") {
         assert(
           receipt.execution_mode === "read_only_scan",
@@ -490,6 +512,13 @@ async function main() {
           receipt.command_result && receipt.command_result.exit_code === 0,
           `${scenario.name}: expected successful dry-run command`,
         );
+          if (scenario.name === "dry-run-crlf-output") {
+            assert(
+              receipt.command_result.stdout === "line1\nline2\n",
+              `${scenario.name}: expected normalized stdout`,
+            );
+            assert(!receipt.command_result.stdout.includes("\r"));
+          }
         }
       }
     } else {
@@ -497,6 +526,16 @@ async function main() {
         assert(
           receipt.result === "blocked",
           `${scenario.name}: expected blocked receipt`,
+        );
+        assert(
+          receipt.receipt_id.startsWith("sha256:"),
+          `${scenario.name}: blocked receipt_id should be deterministic`,
+        );
+        assert(
+          receipt.failure &&
+            receipt.failure.category === "config_error" &&
+            receipt.failure.first_remediation_step.length > 0,
+          `${scenario.name}: blocked receipt missing failure surface`,
         );
         assert(
           typeof receipt.blocked_reason === "string" &&

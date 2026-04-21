@@ -91,12 +91,21 @@ declare module "node:child_process" {
     cwd?: string;
     env?: NodeJS.ProcessEnv;
     shell?: boolean;
+    encoding?: string;
+    windowsHide?: boolean;
     stdio?:
       | "inherit"
       | "ignore"
       | ["ignore", number, number]
       | ["ignore", "pipe", "pipe"];
     detached?: boolean;
+  }
+
+  interface SpawnSyncReturns {
+    status: number | null;
+    stdout?: string;
+    stderr?: string;
+    error?: Error;
   }
 
   interface ChildProcess {
@@ -118,6 +127,11 @@ declare module "node:child_process" {
     args: string[],
     options?: SpawnOptions,
   ): ChildProcess;
+  export function spawnSync(
+    command: string,
+    args: string[],
+    options?: SpawnOptions,
+  ): SpawnSyncReturns;
 }
 
 declare module "node:net" {
@@ -142,6 +156,7 @@ declare const process: {
   cwd(): string;
   exitCode?: number;
   platform: string;
+  version: string;
   pid: number;
   execPath: string;
   on(event: "SIGTERM" | "SIGINT", handler: () => void): void;
