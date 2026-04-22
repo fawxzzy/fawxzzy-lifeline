@@ -56,6 +56,7 @@ Optional report identifiers:
 - The receipt records tranche identity (`source_repo_id`, `tranche_id`) so audit can map proof to an owner-repo adoption batch.
 - Consumers that need proof details should follow the refs back to the ATLAS summary and underlying reports.
 - Path-like receipt refs are normalized to forward slashes before write so Windows and POSIX receipts stay diffable.
+- ATLAS-internal absolute proof refs are rewritten to stack-relative refs before write so emitted receipts stay canonical across machines.
 - The `proof-pass` operator failure surface must report a failure category plus the first remediation step when receipt emission is rejected before write.
 
 - Rule: proof-backed completion is referenced, not re-authored.
