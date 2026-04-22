@@ -1,9 +1,15 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import process from 'node:process';
 
 import { ensureBuilt } from './lib/ensure-built.mjs';
 
 const execFileAsync = promisify(execFile);
+const pnpmEnv = {
+  ...process.env,
+  npm_config_user_agent: 'pnpm/10.6.5 node/v22.14.0',
+  npm_execpath: 'pnpm',
+};
 
 function assert(condition, message) {
   if (!condition) {
@@ -16,7 +22,7 @@ async function runCli(args) {
 
   try {
     const { stdout, stderr } = await execFileAsync(process.execPath, [cliPath, ...args], {
-      env: process.env,
+      env: pnpmEnv,
     });
     return { code: 0, stdout, stderr };
   } catch (error) {
@@ -68,6 +74,13 @@ assert(
   `validate missing manifest: expected error, got ${JSON.stringify(missingManifestValidate.stderr)}`,
 );
 assertUsagePrinted(missingManifestValidate, 'validate missing manifest');
+
+const doctor = await runCli(['doctor']);
+assert(doctor.code === 0, `doctor: expected exit code 0, got ${doctor.code}`);
+assert(
+  doctor.stdout.includes('Doctor preflight passed.'),
+  `doctor: expected success banner, got ${JSON.stringify(doctor.stdout)}`,
+);
 
 const missingManifestResolve = await runCli(['resolve']);
 assert(

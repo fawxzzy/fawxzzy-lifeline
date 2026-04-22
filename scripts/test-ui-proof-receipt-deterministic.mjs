@@ -39,9 +39,9 @@ function runCli(args, atlasRoot) {
 async function seedProofRoot(root, overrides = {}) {
   await writeFile(path.join(root, "stack.yaml"), "name: ATLAS\n", "utf8");
 
-  const semanticRef = "runtime/atlas/ui-observe/drift/fitness/latest.json";
-  const visualRef = "runtime/atlas/ui-visual-proof/fitness/latest.json";
-  const summaryRef = "runtime/atlas/ui-proof/fitness/latest.json";
+  const semanticRef = "runtime\\atlas\\ui-observe\\drift\\fitness\\latest.json";
+  const visualRef = "runtime\\atlas\\ui-visual-proof\\fitness\\latest.json";
+  const summaryRef = "runtime\\atlas\\ui-proof\\fitness\\latest.json";
 
   await writeJson(path.join(root, semanticRef), {
     contract_version: "atlas.ui.drift-report.v1",
@@ -129,6 +129,7 @@ async function main() {
     );
     const receiptPath = parseReceiptPath(success.stdout);
     assert(receiptPath, "proof-pass success did not print a receipt path");
+    assert(!receiptPath.includes("\\"), "receipt path should be normalized");
     const receipt = JSON.parse(await readFile(receiptPath, "utf8"));
     assert.equal(receipt.contract_version, "atlas.ui.proof-passed.receipt.v1");
     assert.equal(receipt.status, "proof_passed");
@@ -138,13 +139,38 @@ async function main() {
       receipt.proof_summary.summary_ref,
       "runtime/atlas/ui-proof/fitness/latest.json",
     );
-    assert.equal(receipt.proof_refs.semantic_report_ref, semanticRef);
-    assert.equal(receipt.proof_refs.visual_report_ref, visualRef);
+    assert.equal(
+      receipt.proof_refs.semantic_report_ref,
+      "runtime/atlas/ui-observe/drift/fitness/latest.json",
+    );
+    assert.equal(
+      receipt.proof_refs.visual_report_ref,
+      "runtime/atlas/ui-visual-proof/fitness/latest.json",
+    );
     assert.deepEqual(receipt.source_refs, [
       "runtime/atlas/ui-proof/fitness/latest.json",
-      semanticRef,
-      visualRef,
+      "runtime/atlas/ui-observe/drift/fitness/latest.json",
+      "runtime/atlas/ui-visual-proof/fitness/latest.json",
     ]);
+
+    const repeat = runCli(
+      [
+        "proof-pass",
+        summaryPath,
+        "--source-repo",
+        "fitness",
+        "--tranche",
+        "F11",
+        "--receipt-dir",
+        successReceiptDir,
+      ],
+      tempRoot,
+    );
+    assert.equal(repeat.status, 0);
+    const repeatReceiptPath = parseReceiptPath(repeat.stdout);
+    assert.equal(repeatReceiptPath, receiptPath);
+    const repeatReceipt = JSON.parse(await readFile(repeatReceiptPath, "utf8"));
+    assert.equal(repeatReceipt.receipt_id, receipt.receipt_id);
 
     const missingSummary = runCli(
       [
@@ -160,7 +186,7 @@ async function main() {
     assert.equal(missingSummary.status, 1);
     assert.match(
       missingSummary.stderr,
-      /Could not read JSON file/i,
+      /Failure category: environment_error[\s\S]*First remediation step:/i,
       "missing summary should fail with a read error",
     );
 
@@ -201,7 +227,7 @@ async function main() {
       assert.equal(semanticBlocked.status, 1);
       assert.match(
         semanticBlocked.stderr,
-        /not completion_ready|clean semantic proof/i,
+        /Failure category: config_error[\s\S]*First remediation step:/i,
         "red semantic proof should block receipt emission",
       );
     } finally {
@@ -245,7 +271,7 @@ async function main() {
       assert.equal(visualBlocked.status, 1);
       assert.match(
         visualBlocked.stderr,
-        /not completion_ready|clean visual proof/i,
+        /Failure category: config_error[\s\S]*First remediation step:/i,
         "red visual proof should block receipt emission",
       );
     } finally {

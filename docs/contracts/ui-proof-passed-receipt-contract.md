@@ -15,7 +15,7 @@ ATLAS owns proof derivation. `_stack` and Playbook may enforce completion on tho
 
 | Contract | Version | Owner | Purpose | Canonical implementation |
 | --- | --- | --- | --- | --- |
-| `atlas.ui.proof-summary.v1` | v1 | ATLAS root validation surface | derived completion-ready summary over semantic drift + visual proof | `C:\ATLAS\ops\atlas\ui_proof\fitness.py` |
+| `atlas.ui.proof-summary.v1` | v1 | ATLAS root validation surface | derived completion-ready summary over semantic drift + visual proof | `ops/atlas/ui_proof/fitness.py` |
 | `atlas.ui.proof-passed.receipt.v1` | v1 | Lifeline execution / receipt surface | auditable owner-repo artifact that records proof-backed tranche completion without duplicating proof truth | `src/core/ui-proof-receipt.ts` |
 
 ## Receipt shape
@@ -55,6 +55,8 @@ Optional report identifiers:
 - The receipt references proof facts; it does not re-author semantic or visual proof truth.
 - The receipt records tranche identity (`source_repo_id`, `tranche_id`) so audit can map proof to an owner-repo adoption batch.
 - Consumers that need proof details should follow the refs back to the ATLAS summary and underlying reports.
+- Path-like receipt refs are normalized to forward slashes before write so Windows and POSIX receipts stay diffable.
+- The `proof-pass` operator failure surface must report a failure category plus the first remediation step when receipt emission is rejected before write.
 
 - Rule: proof-backed completion is referenced, not re-authored.
 - Pattern: enforce in `_stack`, prove in ATLAS, receipt in Lifeline.

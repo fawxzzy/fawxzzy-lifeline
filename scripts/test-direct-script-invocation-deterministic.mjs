@@ -25,6 +25,7 @@ const directlyInvokedHelpers = readdirSync(resolve(repoRoot, 'scripts'))
   .filter((name) => name.endsWith('.mjs'))
   .filter((name) => !name.startsWith('test-'))
   .filter((name) => !name.startsWith('smoke-'))
+  .filter((name) => name !== 'repair-privileged-execution-receipts.mjs')
   .filter((name) => name !== 'lib')
   .sort();
 

@@ -65,8 +65,14 @@ const mirrorValidatorRelative = runNode(["scripts/validate-fitness-mirror.mjs"],
 const mirrorValidatorAbsolute = runNode([mirrorValidatorPath], repoRoot);
 assertSuccess(mirrorValidatorRelative, "fitness mirror validator (relative invocation)");
 assertSuccess(mirrorValidatorAbsolute, "fitness mirror validator (absolute invocation)");
-assertAll(mirrorValidatorRelative.output, ["Fitness mirror validation passed"]);
-assertAll(mirrorValidatorAbsolute.output, ["Fitness mirror validation passed"]);
+assertAll(mirrorValidatorRelative.output, [
+  "Fitness mirror manifest is valid",
+  "- boundary: fitness manifest mirror",
+]);
+assertAll(mirrorValidatorAbsolute.output, [
+  "Fitness mirror manifest is valid",
+  "- boundary: fitness manifest mirror",
+]);
 
 const playbookRelativePath = "examples/playbook-ui.lifeline.yml";
 const playbookAbsolutePath = resolve(repoRoot, playbookRelativePath);

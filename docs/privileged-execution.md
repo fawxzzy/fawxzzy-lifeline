@@ -33,8 +33,11 @@ Blocked attempts still write a receipt. Rejected and expired approvals are never
 ## Receipt behavior
 
 - receipts are written under `.lifeline/receipts/` by default
+- receipt ids are derived from the governed payload, not wall-clock timestamps, so identical attempts produce the same file name
 - the receipt ties back to `worker_id`, `assignment_id`, `stack_lock_digest`, `request_id`, and `approval_receipt_id`
 - worker-originated requests may include `source_refs` pointing at `_stack` artifacts or handoff docs, and receipts echo those refs back unchanged
+- dry-run command output is captured with normalized line endings so Windows and POSIX receipts diff cleanly
+- blocked and failed receipts include a failure category and a first remediation step alongside the blocked reason or execution notes
 - read-only inspections include file metadata, not file content
 - dry-run commands capture stdout, stderr, and exit code
 

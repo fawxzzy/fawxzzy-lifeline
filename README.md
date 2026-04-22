@@ -65,6 +65,7 @@ Lifeline provides a boring, low-maintenance way to describe how an app should be
 ```bash
 pnpm install
 pnpm build
+pnpm lifeline doctor
 pnpm lifeline validate examples/fitness-app.lifeline.yml
 pnpm lifeline resolve fixtures/runtime-smoke-app/runtime-smoke-app.lifeline.yml
 pnpm lifeline resolve fixtures/runtime-smoke-app/runtime-smoke-app.playbook.lifeline.yml --playbook-path fixtures/playbook-export
@@ -87,7 +88,22 @@ pnpm lifeline proof-pass ../../runtime/atlas/ui-proof/fitness/latest.json \
 pnpm lifeline down runtime-smoke-app
 ```
 
+Proof-pass receipt refs normalize path-like values to forward slashes, and `proof-pass` prints a failure category plus a first remediation step when emission fails.
+
 Worker-originated requests can add `source_refs` for `_stack` assignment, status, merge, or handoff artifacts. Lifeline preserves those refs in the emitted receipt so the execution trail stays anchored to worker context instead of hidden transcripts.
+
+## Intended operator flow
+
+Use the operator path in this order so environment drift, manifest drift, and receipt emission stay explicit:
+
+1. `pnpm lifeline doctor`
+2. `pnpm lifeline validate <manifest> [--playbook-path <path>]`
+3. the intended runtime action (`up`, `restart`, `status`, or `execute`)
+4. the auditable receipt step (`execute` writes an execution receipt for every attempt; `proof-pass` writes a deterministic `proof_passed` receipt when the referenced ATLAS summary is clean and `completion_ready=true`)
+
+- Rule: validation must execute through the same CLI boundary operators use for real runtime-facing work.
+- Pattern: run the shared preflight first, validate through the canonical CLI boundary second, then emit deterministic receipts with an explicit first remediation step when receipt emission is blocked.
+- Failure Mode: temp-transpiled helper paths and late environment discovery create noisy module-boundary failures that do not describe the real operator path.
 
 ## Optional Playbook integration
 
@@ -133,14 +149,35 @@ Playbook archetype exports are sparse optional default bundles. They may omit an
 
 ## Validation and resolution behavior
 
+- `lifeline doctor` runs the shared preflight contract that validation uses before it reads manifests.
+- `lifeline doctor` is the explicit way to inspect the same environment boundary that `lifeline validate` will enforce.
 - `lifeline validate <manifest>` validates the raw manifest structure only.
+- `lifeline validate` fails fast on Node, package-manager, shell, or repo prerequisite mismatches before manifest validation starts.
 - `lifeline validate <manifest> --playbook-path <path>` validates the resolved config, so required runtime fields may come from Playbook defaults.
 - Lifeline treats Playbook archetypes as optional default bundles and validates only fields that are present in those exports.
 - Lifeline enforces runnable requirements only on the final resolved config after defaults+manifest merge.
 - The runtime `port` requirement can come from either Playbook defaults or explicit manifest values.
 - `lifeline resolve <manifest>` prints the fully resolved config that Lifeline would execute.
 - `lifeline up` and `lifeline restart` use the same resolution path as `resolve`.
+- The standalone `scripts/validate-fitness-mirror.mjs` helper delegates to `lifeline validate` so mirror validation uses the same CLI boundary as normal runtime-facing validation paths instead of importing temp-transpiled outputs.
 - If an app was started with Playbook defaults, Lifeline stores the resolved Playbook path in `.lifeline/state.json` so `restart` remains deterministic without retyping flags.
+
+## Preflight troubleshooting
+
+If `lifeline validate` fails before manifest parsing, run `pnpm lifeline doctor` first. The shared preflight contract reports the first actionable remediation for:
+
+- Node version mismatches against the repository engine range
+- package-manager drift from the `packageManager` contract
+- shell/runtime probe failures
+- missing repository prerequisites such as the lockfile
+
+The failure surface is intentionally short: category plus first remediation step should fit in one screen.
+
+Windows/Node troubleshooting notes:
+
+- Treat helper-vs-CLI validation differences as boundary bugs. Use `pnpm lifeline validate` or `node scripts/validate-fitness-mirror.mjs` as the canonical path.
+- Do not treat temp-transpiled `.js` outputs in typeless temp roots as canonical evidence on Windows. Those paths can trigger Node 22 module-format drift that does not exist in the real Lifeline runtime boundary.
+- If preflight fails, fix that environment issue before chasing manifest errors. Late environment discovery makes validation noisy and hides the actual root cause.
 
 ## Runtime behavior
 
@@ -344,6 +381,8 @@ Pattern: Separate canonical manifest validation from narrow local mirror validat
 
 Failure Mode: Partial mirrors routed through canonical validators create misleading missing-field failures.
 
+Troubleshooting: if validation behavior differs between a helper script and `lifeline validate`, treat that as a boundary bug. Validation helpers should delegate to the CLI boundary instead of importing temp-transpiled `.js` outputs directly, because typeless temp roots can trigger Node 22 module-format drift on Windows.
+
 ## Minimal dependency policy
 
 Lifeline keeps dependencies intentionally small:
@@ -358,6 +397,8 @@ YAML parsing and env-file parsing are implemented inside the repo because the co
 
 - [Scope](docs/scope.md)
 - [Architecture](docs/architecture.md)
+- [Hermetic validation runbook](docs/runbooks/hermetic-validation-operator-flow.md)
+- [Operator surface](docs/ops/lifeline-operator-surface.md)
 - [Startup contract (Wave 2)](docs/startup-contract.md)
 - [Privileged execution](docs/privileged-execution.md)
 - [UI proof-passed receipt contract](docs/contracts/ui-proof-passed-receipt-contract.md)

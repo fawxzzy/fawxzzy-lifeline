@@ -144,6 +144,7 @@ async function main() {
   }
 
   const expectedDocumentedCommands = [
+    'doctor',
     'validate',
     'resolve',
     'up',
@@ -152,6 +153,8 @@ async function main() {
     'restart',
     'restore',
     'startup',
+    'execute',
+    'proof-pass',
     'down',
   ];
 

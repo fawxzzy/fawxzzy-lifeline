@@ -4,12 +4,12 @@ import {
   readFileSync,
   writeFileSync,
   copyFileSync,
+  existsSync,
   rmSync,
 } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
-import { ensureTempEsmPackage } from './lib/ensure-temp-esm-package.mjs';
 
 function assert(condition, message) {
   if (!condition) {
@@ -28,39 +28,61 @@ const repoRoot = process.cwd();
 const tempRoot = mkdtempSync(resolve(tmpdir(), 'lifeline-validate-fitness-script-'));
 const tempScriptDir = resolve(tempRoot, 'scripts');
 const tempExamplesDir = resolve(tempRoot, 'examples');
-const tempDistContractsDir = resolve(tempRoot, 'dist', 'contracts');
+const tempDistDir = resolve(tempRoot, 'dist');
 
 mkdirSync(tempScriptDir, { recursive: true });
 mkdirSync(tempExamplesDir, { recursive: true });
-mkdirSync(tempDistContractsDir, { recursive: true });
-await ensureTempEsmPackage(tempRoot);
+mkdirSync(tempDistDir, { recursive: true });
 
 copyFileSync(resolve(repoRoot, 'scripts/validate-fitness-mirror.mjs'), resolve(tempScriptDir, 'validate-fitness-mirror.mjs'));
 copyFileSync(resolve(repoRoot, 'examples/fitness-app.lifeline.yml'), resolve(tempExamplesDir, 'fitness-app.lifeline.yml'));
 
-const validatorStub = `import { readFile } from 'node:fs/promises';
+const cliStub = `'use strict';
+const { readFileSync } = require('node:fs');
 
-export async function validateFitnessMirrorManifestFile(filePath) {
-  const contents = await readFile(filePath, 'utf8');
-  const issues = [];
-  const nameLine = contents.split(/\\r?\\n/).find((line) => line.startsWith('name:')) ?? '';
-  if (nameLine.trim() !== 'name: fitness') {
-    issues.push({
-      path: 'name',
-      message: "must equal 'fitness' for Fitness mirror boundary",
-    });
-  }
-  return issues;
+const args = process.argv.slice(2);
+if (args[0] !== 'validate' || args[1] !== 'examples/fitness-app.lifeline.yml') {
+  console.error(\`Unexpected validation invocation: \${args.join(' ')}\`);
+  process.exit(1);
 }
+
+const contents = readFileSync(args[1], 'utf8');
+const nameLine = contents.split(/\\r?\\n/).find((line) => line.startsWith('name:')) ?? '';
+if (nameLine.trim() !== 'name: fitness') {
+  process.stderr.write(
+    "Fitness mirror manifest is invalid: examples/fitness-app.lifeline.yml\\n" +
+      "- name: must equal 'fitness' for Fitness mirror boundary\\n",
+  );
+  process.exit(1);
+}
+
+process.stdout.write(
+  "Fitness mirror manifest is valid: examples/fitness-app.lifeline.yml\\n" +
+    "- boundary: fitness manifest mirror\\n",
+);
 `;
 
-writeFileSync(resolve(tempDistContractsDir, 'fitness-mirror.js'), validatorStub, 'utf8');
+writeFileSync(resolve(tempDistDir, 'cli.js'), cliStub, 'utf8');
 
 const scriptRelativePath = 'scripts/validate-fitness-mirror.mjs';
 const scriptAbsolutePath = resolve(tempRoot, scriptRelativePath);
-const expectedSuccessStdout = 'Fitness mirror validation passed for examples/fitness-app.lifeline.yml.\n';
+const expectedSuccessStdout = [
+  'Fitness mirror manifest is valid: examples/fitness-app.lifeline.yml',
+  '- boundary: fitness manifest mirror',
+  '',
+].join('\n');
+const expectedFailureStderr = [
+  'Fitness mirror manifest is invalid: examples/fitness-app.lifeline.yml',
+  "- name: must equal 'fitness' for Fitness mirror boundary",
+  '',
+].join('\n');
 
 try {
+  assert(
+    !existsSync(resolve(tempRoot, 'package.json')),
+    'temp validation root should stay typeless for module-boundary regression coverage',
+  );
+
   const successRelative = runNode([scriptRelativePath], tempRoot);
   assert(successRelative.status === 0, `relative success run failed:\n${successRelative.stdout}\n${successRelative.stderr}`);
   assert(
@@ -97,12 +119,6 @@ try {
   assert(failureRun.status === 1, `failure run should exit 1:\n${failureRun.stdout}\n${failureRun.stderr}`);
   assert(failureRun.stdout === '', `failure run should not write stdout:\n${failureRun.stdout}`);
 
-  const expectedFailureStderr = [
-    'Fitness mirror validation failed for examples/fitness-app.lifeline.yml:',
-    "- name: must equal 'fitness' for Fitness mirror boundary",
-    '',
-  ].join('\n');
-
   assert(
     failureRun.stderr === expectedFailureStderr,
     [
@@ -110,6 +126,14 @@ try {
       `expected: ${JSON.stringify(expectedFailureStderr)}`,
       `actual: ${JSON.stringify(failureRun.stderr)}`,
     ].join('\n'),
+  );
+  assert(
+    !failureRun.stderr.includes('Cannot use import statement outside a module'),
+    `failure run regressed to module-boundary drift:\n${failureRun.stderr}`,
+  );
+  assert(
+    !failureRun.stderr.includes('MODULE_TYPELESS_PACKAGE_JSON'),
+    `failure run should avoid typeless-package noise:\n${failureRun.stderr}`,
   );
 
   console.log('validate-fitness-mirror script deterministic checks passed');

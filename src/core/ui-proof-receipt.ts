@@ -3,7 +3,11 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 
 import { ValidationError } from "./errors.js";
-import { stableJsonStringify, writeJsonFile } from "./receipt-store.js";
+import {
+  normalizeReceiptPath,
+  stableJsonStringify,
+  writeJsonFile,
+} from "./receipt-store.js";
 
 const UI_PROOF_SUMMARY_CONTRACT_VERSION = "atlas.ui.proof-summary.v1";
 const UI_PROOF_PASSED_RECEIPT_CONTRACT_VERSION =
@@ -87,10 +91,6 @@ function asOptionalStringOrNull(
   return asString(value, field);
 }
 
-function normalizePath(filePath: string): string {
-  return filePath.replace(/\\/g, "/");
-}
-
 async function loadJsonObject(
   filePath: string,
 ): Promise<Record<string, unknown>> {
@@ -98,7 +98,9 @@ async function loadJsonObject(
   const raw = await readFile(filePath, "utf8").catch((error: unknown) => {
     const message =
       error instanceof Error ? error.message : "unknown read error";
-    throw new ValidationError(`Could not read JSON file at ${filePath}: ${message}`);
+    throw new ValidationError(
+      `Could not read JSON file at ${normalizeReceiptPath(filePath)}: ${message}`,
+    );
   });
 
   let parsed: unknown;
@@ -107,11 +109,15 @@ async function loadJsonObject(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "unknown parse error";
-    throw new ValidationError(`Could not parse JSON in ${filePath}: ${message}`);
+    throw new ValidationError(
+      `Could not parse JSON in ${normalizeReceiptPath(filePath)}: ${message}`,
+    );
   }
 
   if (!isRecord(parsed)) {
-    throw new ValidationError(`JSON file at ${filePath} must contain an object.`);
+    throw new ValidationError(
+      `JSON file at ${normalizeReceiptPath(filePath)} must contain an object.`,
+    );
   }
 
   return parsed;
@@ -205,7 +211,7 @@ async function findAtlasRoot(startPath: string): Promise<string | null> {
 }
 
 function relativeAtlasRef(atlasRoot: string, targetPath: string): string {
-  return normalizePath(path.relative(atlasRoot, targetPath));
+  return normalizeReceiptPath(path.relative(atlasRoot, targetPath));
 }
 
 function resolveRefPath(atlasRoot: string | null, ref: string): string {
@@ -214,7 +220,7 @@ function resolveRefPath(atlasRoot: string | null, ref: string): string {
   }
   if (!atlasRoot) {
     throw new ValidationError(
-      `Could not resolve relative proof report ref '${ref}' without an ATLAS root.`,
+      `Could not resolve relative proof report ref '${normalizeReceiptPath(ref)}' without an ATLAS root.`,
     );
   }
   return path.resolve(atlasRoot, ref);
@@ -230,7 +236,7 @@ async function ensureReadableRef(
     const message =
       error instanceof Error ? error.message : "unknown read error";
     throw new ValidationError(
-      `${field} points to an unreadable file at ${resolvedPath}: ${message}`,
+      `${field} points to an unreadable file at ${normalizeReceiptPath(resolvedPath)}: ${message}`,
     );
   });
 }
@@ -303,7 +309,7 @@ export async function emitUiProofPassedReceipt(options: {
 
   const proofSummaryRef = atlasRoot
     ? relativeAtlasRef(atlasRoot, proofSummaryPath)
-    : normalizePath(proofSummaryPath);
+    : normalizeReceiptPath(proofSummaryPath);
   const receiptIdentity = {
     sourceRepoId: options.sourceRepoId,
     trancheId: options.trancheId,
@@ -334,19 +340,23 @@ export async function emitUiProofPassedReceipt(options: {
       report_id: proofSummary.report_id,
     },
     proof_refs: {
-      semantic_report_ref: proofSummary.semantic_proof.report_ref,
+      semantic_report_ref: normalizeReceiptPath(
+        proofSummary.semantic_proof.report_ref,
+      ),
       ...(proofSummary.semantic_proof.report_id !== undefined
         ? { semantic_report_id: proofSummary.semantic_proof.report_id }
         : {}),
-      visual_report_ref: proofSummary.visual_proof.report_ref,
+      visual_report_ref: normalizeReceiptPath(
+        proofSummary.visual_proof.report_ref,
+      ),
       ...(proofSummary.visual_proof.report_id !== undefined
         ? { visual_report_id: proofSummary.visual_proof.report_id }
         : {}),
     },
     source_refs: [
       proofSummaryRef,
-      proofSummary.semantic_proof.report_ref,
-      proofSummary.visual_proof.report_ref,
+      normalizeReceiptPath(proofSummary.semantic_proof.report_ref),
+      normalizeReceiptPath(proofSummary.visual_proof.report_ref),
     ],
   };
 
