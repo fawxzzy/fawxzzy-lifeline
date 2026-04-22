@@ -75,7 +75,8 @@ function categorizeProofPassError(error: unknown): OperatorFailureSurface {
     if (
       message.includes("could not read json file") ||
       message.includes("could not resolve relative proof report ref") ||
-      message.includes("is not readable")
+      message.includes("is not readable") ||
+      message.includes("unreadable file")
     ) {
       return {
         category: "environment_error",

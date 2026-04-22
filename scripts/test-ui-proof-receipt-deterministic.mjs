@@ -14,9 +14,17 @@ async function writeJson(filePath, payload) {
   await writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 }
 
+function resolveFixturePath(root, fileRef) {
+  return path.isAbsolute(fileRef) ? fileRef : path.join(root, fileRef);
+}
+
 function parseReceiptPath(stdout) {
   const match = stdout.match(/Receipt written:\s*(.+)\s*$/m);
   return match ? match[1].trim() : null;
+}
+
+function normalizePath(value) {
+  return value.replaceAll("\\", "/");
 }
 
 function runCli(args, atlasRoot) {
@@ -36,26 +44,62 @@ function runCli(args, atlasRoot) {
   return result;
 }
 
-async function seedProofRoot(root, overrides = {}) {
+function assertFailureSurface(result, expected) {
+  assert.equal(
+    result.status,
+    1,
+    `expected ${expected.name} to fail with exit 1, got ${result.status}\n${result.stdout}\n${result.stderr}`,
+  );
+  assert.match(
+    result.stderr,
+    new RegExp(`Failure category: ${expected.category}`, "i"),
+    `${expected.name} should report ${expected.category}:\n${result.stderr}`,
+  );
+  assert.match(
+    result.stderr,
+    /First remediation step:/i,
+    `${expected.name} should include the first remediation step:\n${result.stderr}`,
+  );
+  assert(
+    result.stderr.includes(expected.remediationIncludes),
+    `${expected.name} should include remediation text ${expected.remediationIncludes}:\n${result.stderr}`,
+  );
+  if (expected.detailIncludes) {
+    assert(
+      result.stderr.includes(expected.detailIncludes),
+      `${expected.name} should include detail ${expected.detailIncludes}:\n${result.stderr}`,
+    );
+  }
+}
+
+async function seedProofRoot(root, options = {}) {
   await writeFile(path.join(root, "stack.yaml"), "name: ATLAS\n", "utf8");
 
-  const semanticRef = "runtime\\atlas\\ui-observe\\drift\\fitness\\latest.json";
-  const visualRef = "runtime\\atlas\\ui-visual-proof\\fitness\\latest.json";
-  const summaryRef = "runtime\\atlas\\ui-proof\\fitness\\latest.json";
+  const semanticRef =
+    options.semanticRef ?? "runtime\\atlas\\ui-observe\\drift\\fitness\\latest.json";
+  const visualRef =
+    options.visualRef ?? "runtime\\atlas\\ui-visual-proof\\fitness\\latest.json";
+  const summaryRef = options.summaryRef ?? "runtime\\atlas\\ui-proof\\fitness\\latest.json";
 
-  await writeJson(path.join(root, semanticRef), {
-    contract_version: "atlas.ui.drift-report.v1",
-    report_id: "sha256:semantic-proof-clean",
-    status: "clean",
-    finding_count: 0,
-  });
-  await writeJson(path.join(root, visualRef), {
-    contract_version: "atlas.ui.visual-proof.v1",
-    report_id: "sha256:visual-proof-clean",
-    status: "clean",
-    gated_capture_count: 2,
-    failed_capture_ids: [],
-  });
+  if (options.writeSemanticReport !== false) {
+    await writeJson(resolveFixturePath(root, semanticRef), {
+      contract_version: "atlas.ui.drift-report.v1",
+      report_id: "sha256:semantic-proof-clean",
+      status: "clean",
+      finding_count: 0,
+      ...(options.semanticReport ?? {}),
+    });
+  }
+  if (options.writeVisualReport !== false) {
+    await writeJson(resolveFixturePath(root, visualRef), {
+      contract_version: "atlas.ui.visual-proof.v1",
+      report_id: "sha256:visual-proof-clean",
+      status: "clean",
+      gated_capture_count: 2,
+      failed_capture_ids: [],
+      ...(options.visualReport ?? {}),
+    });
+  }
 
   const summary = {
     contract_version: "atlas.ui.proof-summary.v1",
@@ -92,14 +136,15 @@ async function seedProofRoot(root, overrides = {}) {
     operator_summary: [
       "Semantic drift clean and visual proof clean across 2 gated captures.",
     ],
-    ...overrides,
+    ...(options.overrides ?? {}),
   };
-  await writeJson(path.join(root, summaryRef), summary);
+  await writeJson(resolveFixturePath(root, summaryRef), summary);
 
   return {
     semanticRef,
     visualRef,
-    summaryPath: path.join(root, summaryRef),
+    summaryRef,
+    summaryPath: resolveFixturePath(root, summaryRef),
   };
 }
 
@@ -172,10 +217,100 @@ async function main() {
     const repeatReceipt = JSON.parse(await readFile(repeatReceiptPath, "utf8"));
     assert.equal(repeatReceipt.receipt_id, receipt.receipt_id);
 
+    const absoluteRefRoot = await mkdtemp(
+      path.join(os.tmpdir(), "lifeline-ui-proof-absolute-"),
+    );
+    try {
+      const absoluteSemanticRef = path.join(
+        absoluteRefRoot,
+        "runtime",
+        "atlas",
+        "ui-observe",
+        "drift",
+        "fitness",
+        "latest.json",
+      );
+      const absoluteVisualRef = path.join(
+        absoluteRefRoot,
+        "runtime",
+        "atlas",
+        "ui-visual-proof",
+        "fitness",
+        "latest.json",
+      );
+      const absoluteSeed = await seedProofRoot(absoluteRefRoot, {
+        semanticRef: absoluteSemanticRef,
+        visualRef: absoluteVisualRef,
+      });
+      const absoluteSuccess = runCli(
+        [
+          "proof-pass",
+          absoluteSeed.summaryPath,
+          "--source-repo",
+          "fitness",
+          "--tranche",
+          "F12",
+        ],
+        absoluteRefRoot,
+      );
+      assert.equal(
+        absoluteSuccess.status,
+        0,
+        `absolute ATLAS refs should still emit a receipt:\n${absoluteSuccess.stdout}\n${absoluteSuccess.stderr}`,
+      );
+      const absoluteReceiptPath = parseReceiptPath(absoluteSuccess.stdout);
+      assert(absoluteReceiptPath, "absolute ref success did not print a receipt path");
+      const absoluteReceipt = JSON.parse(
+        await readFile(absoluteReceiptPath, "utf8"),
+      );
+      assert.equal(
+        absoluteReceipt.proof_summary.summary_ref,
+        "runtime/atlas/ui-proof/fitness/latest.json",
+      );
+      assert.equal(
+        absoluteReceipt.proof_refs.semantic_report_ref,
+        "runtime/atlas/ui-observe/drift/fitness/latest.json",
+      );
+      assert.equal(
+        absoluteReceipt.proof_refs.visual_report_ref,
+        "runtime/atlas/ui-visual-proof/fitness/latest.json",
+      );
+      assert.deepEqual(absoluteReceipt.source_refs, [
+        "runtime/atlas/ui-proof/fitness/latest.json",
+        "runtime/atlas/ui-observe/drift/fitness/latest.json",
+        "runtime/atlas/ui-visual-proof/fitness/latest.json",
+      ]);
+      assert.equal(
+        absoluteReceipt.proof_refs.semantic_report_ref.includes(":"),
+        false,
+        "absolute ATLAS refs should be rewritten to stack-relative refs",
+      );
+      assert.equal(
+        absoluteReceipt.proof_refs.visual_report_ref.includes(":"),
+        false,
+        "absolute ATLAS refs should be rewritten to stack-relative refs",
+      );
+      assert.equal(
+        absoluteReceipt.source_refs.some((entry) => entry.includes("\\")),
+        false,
+        "emitted source refs should stay slash-normalized",
+      );
+    } finally {
+      await rm(absoluteRefRoot, { recursive: true, force: true });
+    }
+
+    const missingSummaryPath = path.join(
+      tempRoot,
+      "runtime",
+      "atlas",
+      "ui-proof",
+      "fitness",
+      "missing.json",
+    );
     const missingSummary = runCli(
       [
         "proof-pass",
-        path.join(tempRoot, "runtime", "atlas", "ui-proof", "fitness", "missing.json"),
+        missingSummaryPath,
         "--source-repo",
         "fitness",
         "--tranche",
@@ -183,34 +318,126 @@ async function main() {
       ],
       tempRoot,
     );
-    assert.equal(missingSummary.status, 1);
-    assert.match(
-      missingSummary.stderr,
-      /Failure category: environment_error[\s\S]*First remediation step:/i,
-      "missing summary should fail with a read error",
+    assertFailureSurface(missingSummary, {
+      name: "missing summary",
+      category: "environment_error",
+      remediationIncludes:
+        "Verify the proof summary path and the referenced proof reports are readable, then rerun.",
+      detailIncludes: normalizePath(missingSummaryPath),
+    });
+
+    const missingSemanticRoot = await mkdtemp(
+      path.join(os.tmpdir(), "lifeline-ui-proof-missing-semantic-"),
     );
+    try {
+      const missingSemanticSeed = await seedProofRoot(missingSemanticRoot, {
+        semanticRef: "runtime\\atlas\\ui-observe\\drift\\fitness\\missing.json",
+        writeSemanticReport: false,
+      });
+      const missingSemantic = runCli(
+        [
+          "proof-pass",
+          missingSemanticSeed.summaryPath,
+          "--source-repo",
+          "fitness",
+          "--tranche",
+          "F11",
+        ],
+        missingSemanticRoot,
+      );
+      assertFailureSurface(missingSemantic, {
+        name: "missing semantic proof report",
+        category: "environment_error",
+        remediationIncludes:
+          "Verify the proof summary path and the referenced proof reports are readable, then rerun.",
+        detailIncludes: "runtime/atlas/ui-observe/drift/fitness/missing.json",
+      });
+    } finally {
+      await rm(missingSemanticRoot, { recursive: true, force: true });
+    }
+
+    const malformedSummaryRoot = await mkdtemp(
+      path.join(os.tmpdir(), "lifeline-ui-proof-malformed-"),
+    );
+    try {
+      const malformedSeed = await seedProofRoot(malformedSummaryRoot);
+      await writeFile(
+        malformedSeed.summaryPath,
+        "{ not-valid-json }\n",
+        "utf8",
+      );
+      const malformedSummary = runCli(
+        [
+          "proof-pass",
+          malformedSeed.summaryPath,
+          "--source-repo",
+          "fitness",
+          "--tranche",
+          "F11",
+        ],
+        malformedSummaryRoot,
+      );
+      assertFailureSurface(malformedSummary, {
+        name: "malformed summary",
+        category: "config_error",
+        remediationIncludes:
+          "Fix the proof summary, source repo, or tranche arguments so they match the ATLAS proof contract, then rerun.",
+        detailIncludes: "Could not parse JSON",
+      });
+    } finally {
+      await rm(malformedSummaryRoot, { recursive: true, force: true });
+    }
+
+    const mismatchedOwnerRoot = await mkdtemp(
+      path.join(os.tmpdir(), "lifeline-ui-proof-owner-mismatch-"),
+    );
+    try {
+      const mismatchedOwnerSeed = await seedProofRoot(mismatchedOwnerRoot);
+      const mismatchedOwner = runCli(
+        [
+          "proof-pass",
+          mismatchedOwnerSeed.summaryPath,
+          "--source-repo",
+          "mazer",
+          "--tranche",
+          "F11",
+        ],
+        mismatchedOwnerRoot,
+      );
+      assertFailureSurface(mismatchedOwner, {
+        name: "owner mismatch",
+        category: "config_error",
+        remediationIncludes:
+          "Fix the proof summary, source repo, or tranche arguments so they match the ATLAS proof contract, then rerun.",
+        detailIncludes: "does not match proof summary owner_repo_id",
+      });
+    } finally {
+      await rm(mismatchedOwnerRoot, { recursive: true, force: true });
+    }
 
     const semanticBlockedRoot = await mkdtemp(
       path.join(os.tmpdir(), "lifeline-ui-proof-semantic-"),
     );
     try {
       const semanticSeed = await seedProofRoot(semanticBlockedRoot, {
-        completion_ready: false,
-        blocking_reasons: ["semantic drift detected"],
-        summary: {
-          status: "proof_blocked",
-          semantic_status: "drift_detected",
-          visual_status: "clean",
-          gated_capture_count: 2,
-          failed_capture_count: 1,
-        },
-        semantic_proof: {
-          status: "drift_detected",
-          report_ref: "runtime/atlas/ui-observe/drift/fitness/latest.json",
-          report_id: "sha256:semantic-proof-drift",
-          finding_count: 1,
-          failed_capture_ids: ["curated-onboarding-shell"],
-          errors: [],
+        overrides: {
+          completion_ready: true,
+          blocking_reasons: ["semantic drift detected"],
+          summary: {
+            status: "proof_blocked",
+            semantic_status: "drift_detected",
+            visual_status: "clean",
+            gated_capture_count: 2,
+            failed_capture_count: 1,
+          },
+          semantic_proof: {
+            status: "drift_detected",
+            report_ref: "runtime/atlas/ui-observe/drift/fitness/latest.json",
+            report_id: "sha256:semantic-proof-drift",
+            finding_count: 1,
+            failed_capture_ids: ["curated-onboarding-shell"],
+            errors: [],
+          },
         },
       });
       const semanticBlocked = runCli(
@@ -224,12 +451,13 @@ async function main() {
         ],
         semanticBlockedRoot,
       );
-      assert.equal(semanticBlocked.status, 1);
-      assert.match(
-        semanticBlocked.stderr,
-        /Failure category: config_error[\s\S]*First remediation step:/i,
-        "red semantic proof should block receipt emission",
-      );
+      assertFailureSurface(semanticBlocked, {
+        name: "semantic proof blocked",
+        category: "config_error",
+        remediationIncludes:
+          "Fix the proof summary, source repo, or tranche arguments so they match the ATLAS proof contract, then rerun.",
+        detailIncludes: "does not have clean semantic proof",
+      });
     } finally {
       await rm(semanticBlockedRoot, { recursive: true, force: true });
     }
@@ -239,22 +467,24 @@ async function main() {
     );
     try {
       const visualSeed = await seedProofRoot(visualBlockedRoot, {
-        completion_ready: false,
-        blocking_reasons: ["visual proof failed"],
-        summary: {
-          status: "proof_blocked",
-          semantic_status: "clean",
-          visual_status: "proof_failed",
-          gated_capture_count: 2,
-          failed_capture_count: 1,
-        },
-        visual_proof: {
-          status: "proof_failed",
-          report_ref: "runtime/atlas/ui-visual-proof/fitness/latest.json",
-          report_id: "sha256:visual-proof-failed",
-          gated_capture_count: 2,
-          failed_capture_ids: ["today-overview-default"],
-          errors: ["unexpected visual delta"],
+        overrides: {
+          completion_ready: true,
+          blocking_reasons: ["visual proof failed"],
+          summary: {
+            status: "proof_blocked",
+            semantic_status: "clean",
+            visual_status: "proof_failed",
+            gated_capture_count: 2,
+            failed_capture_count: 1,
+          },
+          visual_proof: {
+            status: "proof_failed",
+            report_ref: "runtime/atlas/ui-visual-proof/fitness/latest.json",
+            report_id: "sha256:visual-proof-failed",
+            gated_capture_count: 2,
+            failed_capture_ids: ["today-overview-default"],
+            errors: ["unexpected visual delta"],
+          },
         },
       });
       const visualBlocked = runCli(
@@ -268,12 +498,13 @@ async function main() {
         ],
         visualBlockedRoot,
       );
-      assert.equal(visualBlocked.status, 1);
-      assert.match(
-        visualBlocked.stderr,
-        /Failure category: config_error[\s\S]*First remediation step:/i,
-        "red visual proof should block receipt emission",
-      );
+      assertFailureSurface(visualBlocked, {
+        name: "visual proof blocked",
+        category: "config_error",
+        remediationIncludes:
+          "Fix the proof summary, source repo, or tranche arguments so they match the ATLAS proof contract, then rerun.",
+        detailIncludes: "does not have clean visual proof",
+      });
     } finally {
       await rm(visualBlockedRoot, { recursive: true, force: true });
     }

@@ -19,6 +19,20 @@ Link related pull requests whenever possible.
 - Failure mode addressed:
   - Temp transpile paths and late environment discovery can create noisy module-boundary failures that do not match the real Lifeline boundary.
 
+## 2026-04-22
+
+- WHAT changed:
+  - Expanded deterministic preflight rejection fixtures across `node-version`, `package-manager`, `shell-runtime`, and `repo-prerequisite` classifications.
+  - Expanded `proof-pass` deterministic fixtures for unreadable proof refs, malformed summaries, owner mismatches, blocked proof states, and Windows-oriented path canonicalization.
+  - Canonicalized ATLAS-internal absolute proof refs to stack-relative forward-slash refs before proof-passed receipt write.
+- WHY it changed:
+  - Failure categories and first-remediation guidance need direct fixture coverage so proof/operator surfaces stay stable instead of drifting with ad hoc stderr text.
+  - Windows and mixed-path runs should emit the same proof receipt refs as POSIX runs at the artifact boundary.
+- Pattern:
+  - Fixture-back failure categories and normalize path refs at receipt emission, not only at display time.
+- Failure mode addressed:
+  - Proof receipts could preserve machine-local absolute Windows report paths even when the reports were inside the ATLAS root, making artifacts less canonical and less diffable.
+
 ## 2026-03-25
 
 - WHAT changed:

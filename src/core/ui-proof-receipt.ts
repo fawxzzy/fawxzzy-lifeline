@@ -214,6 +214,25 @@ function relativeAtlasRef(atlasRoot: string, targetPath: string): string {
   return normalizeReceiptPath(path.relative(atlasRoot, targetPath));
 }
 
+function canonicalizeAtlasRef(atlasRoot: string | null, ref: string): string {
+  const normalizedRef = normalizeReceiptPath(ref);
+  if (!atlasRoot) {
+    return normalizedRef;
+  }
+
+  const resolvedPath = resolveRefPath(atlasRoot, ref);
+  const relativeRef = path.relative(atlasRoot, resolvedPath);
+  if (
+    relativeRef.length > 0 &&
+    !relativeRef.startsWith("..") &&
+    !path.isAbsolute(relativeRef)
+  ) {
+    return normalizeReceiptPath(relativeRef);
+  }
+
+  return normalizedRef;
+}
+
 function resolveRefPath(atlasRoot: string | null, ref: string): string {
   if (path.isAbsolute(ref)) {
     return path.resolve(ref);
@@ -310,13 +329,21 @@ export async function emitUiProofPassedReceipt(options: {
   const proofSummaryRef = atlasRoot
     ? relativeAtlasRef(atlasRoot, proofSummaryPath)
     : normalizeReceiptPath(proofSummaryPath);
+  const semanticReportRef = canonicalizeAtlasRef(
+    atlasRoot,
+    proofSummary.semantic_proof.report_ref,
+  );
+  const visualReportRef = canonicalizeAtlasRef(
+    atlasRoot,
+    proofSummary.visual_proof.report_ref,
+  );
   const receiptIdentity = {
     sourceRepoId: options.sourceRepoId,
     trancheId: options.trancheId,
     proofSummaryRef,
     proofSummaryReportId: proofSummary.report_id,
-    semanticReportRef: proofSummary.semantic_proof.report_ref,
-    visualReportRef: proofSummary.visual_proof.report_ref,
+    semanticReportRef,
+    visualReportRef,
     ...(proofSummary.semantic_proof.report_id !== undefined
       ? { semanticReportId: proofSummary.semantic_proof.report_id }
       : {}),
@@ -340,24 +367,16 @@ export async function emitUiProofPassedReceipt(options: {
       report_id: proofSummary.report_id,
     },
     proof_refs: {
-      semantic_report_ref: normalizeReceiptPath(
-        proofSummary.semantic_proof.report_ref,
-      ),
+      semantic_report_ref: semanticReportRef,
       ...(proofSummary.semantic_proof.report_id !== undefined
         ? { semantic_report_id: proofSummary.semantic_proof.report_id }
         : {}),
-      visual_report_ref: normalizeReceiptPath(
-        proofSummary.visual_proof.report_ref,
-      ),
+      visual_report_ref: visualReportRef,
       ...(proofSummary.visual_proof.report_id !== undefined
         ? { visual_report_id: proofSummary.visual_proof.report_id }
         : {}),
     },
-    source_refs: [
-      proofSummaryRef,
-      normalizeReceiptPath(proofSummary.semantic_proof.report_ref),
-      normalizeReceiptPath(proofSummary.visual_proof.report_ref),
-    ],
+    source_refs: [proofSummaryRef, semanticReportRef, visualReportRef],
   };
 
   const receiptDir =
