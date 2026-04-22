@@ -1,6 +1,6 @@
 # Architecture
 
-Lifeline uses a simple four-part architecture.
+Lifeline uses a small operator architecture with explicit preflight, validation, runtime, and receipt boundaries.
 
 ## 1. Manifest contract
 
@@ -17,10 +17,27 @@ Playbook is one repo with two roles:
 
 Lifeline only consumes Playbook export files from disk. There are no HTTP calls, no requirement that the Playbook UI be running, and no runtime dependency on an external service.
 
-## 3. CLI operator
+## 3. Shared preflight + hermetic validate boundary
+
+The preflight contract is the environment gate in front of manifest validation:
+
+- `doctor` runs the shared preflight contract and prints the operator-facing success or failure surface without reading a manifest
+- `validate` runs the same preflight contract before it loads a manifest or resolves Playbook defaults
+- preflight failures stay short and actionable: category plus first remediation step
+- preflight currently covers Node engine range, package-manager contract, shell-runtime probes, and repo prerequisites such as the lockfile
+- the standalone `scripts/validate-fitness-mirror.mjs` helper delegates back to `lifeline validate` so mirror validation stays on the same CLI boundary instead of importing temp-transpiled outputs directly
+
+This is the hermetic validation rule for the repo:
+
+- Rule: validation must execute through the same boundary operators use for real runtime-facing work.
+- Pattern: inspect the environment first, then validate the resolved or raw manifest through the CLI.
+- Failure Mode: helper-only temp transpile paths can create fake Windows/Node module-boundary failures that do not exist on the real Lifeline path.
+
+## 4. CLI operator
 
 The CLI is the operator-facing entrypoint. Current commands:
 
+- `doctor`
 - `validate`
 - `resolve`
 - `up`
@@ -30,10 +47,12 @@ The CLI is the operator-facing entrypoint. Current commands:
 - `restart`
 - `restore`
 - `startup` (merged Wave 2 backend seam with registered platform installers)
+- `execute`
+- `proof-pass`
 
 `up` resolves config and runs install/build, then launches a detached Lifeline supervisor process (not the app process directly).
 
-## 4. Local runtime layer + startup contract surface (Wave 1 + merged Wave 2)
+## 5. Local runtime layer + startup contract surface (Wave 1 + merged Wave 2)
 
 Runtime behavior:
 
@@ -48,29 +67,32 @@ Runtime behavior:
 
 Logs remain file-based at `.lifeline/logs/<app>.log` and include both app output and supervisor lifecycle events.
 
-## 5. Read-only privileged execution surface
+## 6. Receipt-backed execution and proof surfaces
 
-Lifeline also exposes a narrow execution lane for capability-backed, approval-backed work:
+Lifeline exposes two narrow auditable lanes after validation/runtime work:
 
-- request, approval, and capability profile are loaded from local JSON files
-- read-only filesystem inspection is allowed when the granted scope includes the target paths
-- dry-run command execution is allowed when the approval and capability profile both allow the command
-- blocked, rejected, and expired attempts still emit a receipt
-- receipts are written locally and are part of the auditable trail
+- `execute` is the capability-backed, approval-backed execution lane for bounded read-only inspection and dry-run commands
+- `proof-pass` is the proof-backed completion lane for emitting `proof_passed` receipts from already-derived ATLAS proof summaries
+- request, approval, proof summary, and capability inputs are loaded from local files
+- blocked, rejected, and expired execution attempts still emit an execution receipt
+- proof-backed completion emits a receipt only when the referenced ATLAS summary is clean and `completion_ready=true`
+- receipt ids are derived from governed inputs instead of wall-clock time
+- receipt refs normalize path-like values to forward slashes before write so Windows and POSIX output stays diffable
+- operator-facing receipt failures print a category plus the first remediation step
 - worker-originated requests may carry `source_refs` to `_stack` assignment, status, merge, or handoff artifacts, and Lifeline preserves those refs in the receipt trail
 
-This surface is intentionally not ambient admin. It is a receipt-backed executor for bounded read-only and dry-run actions only.
+These surfaces are intentionally not ambient admin. They are receipt-backed lanes for bounded execution and proof-backed completion only.
 
 ## Startup backend boundary
 
 The merged Wave 2 contract provides startup intent/state plus registered machine-local installers behind one seam:
 
-- `win32` → Task Scheduler (`windows-task-scheduler`)
-- `linux` → user systemd (`systemd-user`)
-- `darwin` → launchd LaunchAgent (`launchd-agent`)
-- `freebsd` → rc.d (`freebsd-rc.d`)
-- `openbsd` → rcctl (`openbsd-rcctl`)
-- `netbsd` → rc.d (`netbsd-rc.d`)
-- `aix` → inittab (`aix-inittab`)
+- `win32` -> Task Scheduler (`windows-task-scheduler`)
+- `linux` -> user systemd (`systemd-user`)
+- `darwin` -> launchd LaunchAgent (`launchd-agent`)
+- `freebsd` -> rc.d (`freebsd-rc.d`)
+- `openbsd` -> rcctl (`openbsd-rcctl`)
+- `netbsd` -> rc.d (`netbsd-rc.d`)
+- `aix` -> inittab (`aix-inittab`)
 
 All startup backends keep `lifeline restore` as the canonical restore entrypoint target and preserve `--dry-run` non-mutation semantics through the same seam. Unregistered platforms still resolve to the explicit `unsupported` contract-only fallback backend.

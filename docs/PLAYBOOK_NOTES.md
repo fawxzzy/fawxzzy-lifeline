@@ -3,6 +3,22 @@
 Use this file to record meaningful code changes in a concise, reviewable format.
 Link related pull requests whenever possible.
 
+## 2026-04-21
+
+- WHAT changed:
+  - Reframed README, architecture, scope, and operator docs around the shared preflight contract and the hermetic `doctor -> validate -> runtime -> receipt/proof-pass` path.
+  - Added a concise operator runbook for validation, runtime action, deterministic execution receipts, and proof-backed completion receipts.
+  - Tightened the README command-surface test so the documented CLI surface must continue to include `execute` and `proof-pass`.
+- WHY it changed:
+  - Wave 1 changed the real operator seam, but the docs still mixed startup-wave language with the newer preflight and receipt model.
+  - Operators need one canonical path that explains where environment failures stop, where manifest validation begins, and how deterministic receipts surface the first remediation step.
+- Rule:
+  - Validation must execute through the same CLI boundary operators use for real runtime-facing work.
+- Pattern:
+  - Shared preflight first, canonical validate second, runtime action third, deterministic receipt last.
+- Failure mode addressed:
+  - Temp transpile paths and late environment discovery can create noisy module-boundary failures that do not match the real Lifeline boundary.
+
 ## 2026-03-25
 
 - WHAT changed:

@@ -6,6 +6,7 @@ Lifeline v1 is the smallest useful version of a self-hosted app operator for one
 
 Lifeline v1 includes:
 
+- shared preflight checks surfaced through `doctor` and enforced by `validate`
 - supervisor-backed local app lifecycle for one machine
 - restart-on-failure with bounded backoff and crash-loop detection
 - persisted runtime metadata for deterministic restore
@@ -13,6 +14,7 @@ Lifeline v1 includes:
 - CLI validation for those manifests
 - local runtime commands: `up`, `down`, `status`, `logs`, `restart`, `restore`
 - read-only privileged execution with explicit approval receipts
+- proof-backed completion receipts through `proof-pass`
 - support for the `next-web` and `node-web` archetypes
 - example manifests for the fitness app and Playbook UI
 - an in-repo fixture app used for runtime smoke verification
@@ -37,6 +39,9 @@ Lifeline v1 excludes:
 - **Rule:** Prefer a boring local operator over a premature platform abstraction.
 - **Pattern:** Validate generic app contracts, but verify runtime behavior with an in-repo fixture.
 - **Failure Mode:** Tying runtime verification to real external apps too early creates fragile CI and permanent maintenance drag.
+- **Rule:** Validation must execute through the same CLI boundary operators use in normal workflow.
+- **Pattern:** Run shared preflight first, validate second, then rely on deterministic receipts to record what actually happened.
+- **Failure Mode:** Temp transpile paths and late environment discovery create noisy false failures that do not describe the real operator boundary.
 
 ## Why the boundary is strict
 
