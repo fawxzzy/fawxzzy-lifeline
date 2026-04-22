@@ -19,6 +19,7 @@ Link related pull requests whenever possible.
   - Prefer one authoritative `verify` entrypoint and one explicit hosted `verify` check over duplicated workflow-specific test lists or ambiguous required-check names.
 - Failure mode addressed:
   - Manually reconstructed workflow gates or mismatched required checks can miss verify-only coverage such as privileged execution receipt repair, or let policy drift away from the canonical contract.
+  - Future canary PRs must stay blocked on `verify` until it passes and must not treat `Playbook Smoke` as a required merge blocker.
 
 ## 2026-04-21
 
