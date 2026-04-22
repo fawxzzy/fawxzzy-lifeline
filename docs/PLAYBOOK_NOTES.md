@@ -9,15 +9,16 @@ Link related pull requests whenever possible.
   - Replaced the PR and `main` hosted gate with one canonical GitHub Actions `verify` job that runs `pnpm run verify`.
   - Removed workflow-side reconstruction of test lists so the hosted gate now covers the repair-receipt path through the same repo contract used locally.
   - Demoted the Playbook smoke workflow to a manual supplemental lane so it no longer drifts into the authoritative PR or `main` gate.
+  - Documented the exact required merge check as `verify` and pinned the hosted job name explicitly so branch protection can target a stable check run.
 - WHY it changed:
   - Hosted CI had broad coverage, but it still missed part of the declared `verify` contract and could drift as local verification changed.
   - Branch protection should reflect the same narrow contract operators run before claiming repo-local completion.
 - Rule:
-  - Hosted CI must execute the same canonical verification contract as local repo verification.
+  - Hosted CI must execute the same canonical verification contract as local repo verification, and merge policy must require that exact hosted `verify` check.
 - Pattern:
-  - Prefer one authoritative `verify` entrypoint over duplicated workflow-specific test lists.
+  - Prefer one authoritative `verify` entrypoint and one explicit hosted `verify` check over duplicated workflow-specific test lists or ambiguous required-check names.
 - Failure mode addressed:
-  - Manually reconstructed workflow gates can miss verify-only coverage such as privileged execution receipt repair.
+  - Manually reconstructed workflow gates or mismatched required checks can miss verify-only coverage such as privileged execution receipt repair, or let policy drift away from the canonical contract.
 
 ## 2026-04-21
 

@@ -11,6 +11,14 @@ Playbook requires `docs/PLAYBOOK_NOTES.md` updates so each meaningful change rec
 
 If code paths change (`src/**`, `app/**`, `server/**`, `supabase/**`), update `docs/PLAYBOOK_NOTES.md` in the same change.
 
+## Required merge gate
+
+The canonical hosted merge gate for `main` is the GitHub Actions check run named `verify` from `.github/workflows/ci.yml`.
+
+- Local operators must run `pnpm run verify` before claiming repo-local completion.
+- GitHub branch protection or rulesets for `main` must require the `verify` check, not the manual `Playbook Smoke` workflow.
+- Local verify and hosted verify are intentionally the same contract: `pnpm run verify`.
+
 ## Quick fix for CI failures
 
 If CI fails with `requireNotesOnChanges`:
