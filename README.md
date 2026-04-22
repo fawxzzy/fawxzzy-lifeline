@@ -304,7 +304,7 @@ pnpm test:startup-roundtrip
 
 `node scripts/lib/ensure-built.mjs` is the canonical smoke preflight. It fails early with explicit setup errors (missing/stale `dist/cli.js`) so smoke failures that follow are runtime/regression signals.
 
-CI uses the same canonical Playbook verification path: `pnpm smoke:playbook`.
+The canonical repo verification contract is `pnpm run verify`. GitHub Actions enforces that same contract through the required `verify` check on pull requests, while `Playbook Smoke` remains a manual supplemental lane.
 
 ### Smoke execution modes
 

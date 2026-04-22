@@ -11,6 +11,7 @@ env:
 
 jobs:
   verify:
+    name: verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
