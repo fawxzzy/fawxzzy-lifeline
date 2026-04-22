@@ -20,3 +20,4 @@ Verification
   - `pnpm run build`
   - `pnpm run test:privileged-execution-bridge`
   - `pnpm run test:privileged-execution-repair`
+  - `pnpm run test:ui-proof-receipt`

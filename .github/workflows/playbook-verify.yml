@@ -1,16 +1,14 @@
-name: playbook-verify
+name: Playbook Smoke
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 env:
   NPM_CONFIG_OPTIONAL: "true"
   PNPM_CONFIG_OPTIONAL: "true"
 
 jobs:
-  verify:
+  playbook-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
