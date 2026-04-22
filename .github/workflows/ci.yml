@@ -1,15 +1,16 @@
 name: CI
 
 on:
-  push:
   pull_request:
+  push:
+    branches: [main]
 
 env:
   NPM_CONFIG_OPTIONAL: "true"
   PNPM_CONFIG_OPTIONAL: "true"
 
 jobs:
-  validate:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,126 +33,5 @@ jobs:
       - name: Verify esbuild optional package resolution
         run: pnpm ci:verify:esbuild
 
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Build
-        run: pnpm build
-
-      - name: Validate fitness manifest
-        run: pnpm lifeline validate examples/fitness-app.lifeline.yml
-
-      - name: Validate Playbook UI manifest
-        run: pnpm lifeline validate examples/playbook-ui.lifeline.yml
-
-      - name: Smoke preflight
-        run: node scripts/lib/ensure-built.mjs
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lifeline-dist
-          path: dist
-          if-no-files-found: error
-
-  suite-matrix:
-    runs-on: ubuntu-latest
-    outputs:
-      smoke_suites: ${{ steps.suites.outputs.smoke_suites }}
-      deterministic_suites: ${{ steps.suites.outputs.deterministic_suites }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Determine suite matrices
-        id: suites
-        run: |
-          smoke_suites=$(node -e "const suites=require('./scripts/smoke-suites.json'); process.stdout.write(JSON.stringify(Object.keys(suites)));")
-          deterministic_suites=$(node -e "const suites=require('./scripts/test-suites.json'); process.stdout.write(JSON.stringify(Object.keys(suites)));")
-          echo "smoke_suites=$smoke_suites" >> "$GITHUB_OUTPUT"
-          echo "deterministic_suites=$deterministic_suites" >> "$GITHUB_OUTPUT"
-
-  smoke-suites:
-    name: smoke-suite (${{ matrix.suite }})
-    runs-on: ubuntu-latest
-    needs:
-      - validate
-      - suite-matrix
-    strategy:
-      fail-fast: false
-      matrix:
-        suite: ${{ fromJson(needs.suite-matrix.outputs.smoke_suites) }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.6.5
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify esbuild optional package resolution
-        run: pnpm ci:verify:esbuild
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lifeline-dist
-          path: dist
-
-      - name: Smoke preflight
-        run: node scripts/lib/ensure-built.mjs
-
-      - name: Run smoke suite
-        run: node scripts/smoke-suite-runner.mjs ${{ matrix.suite }}
-
-  deterministic-suites:
-    name: deterministic-suite (${{ matrix.suite }})
-    runs-on: ubuntu-latest
-    needs:
-      - validate
-      - suite-matrix
-    strategy:
-      fail-fast: false
-      matrix:
-        suite: ${{ fromJson(needs.suite-matrix.outputs.deterministic_suites) }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.6.5
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Verify esbuild optional package resolution
-        run: pnpm ci:verify:esbuild
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: lifeline-dist
-          path: dist
-
-      - name: Run deterministic suite
-        run: node scripts/test-runner.mjs ${{ matrix.suite }}
+      - name: Run canonical repo verify contract
+        run: pnpm run verify
