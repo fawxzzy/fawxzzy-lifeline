@@ -327,6 +327,18 @@ function validateReleaseTarget(target, issues) {
   };
 }
 
+function synthesizeReleaseTarget(value) {
+  if (!isNonEmptyString(value.releaseId) || !isNonEmptyString(value.artifactRef)) {
+    return undefined;
+  }
+
+  return {
+    kind: WAVE1_RELEASE_TARGET_KIND,
+    releaseId: value.releaseId,
+    artifactRef: value.artifactRef,
+  };
+}
+
 function validateRollbackTarget(target, issues) {
   if (!isRecord(target)) {
     pushIssue(issues, "rollbackTarget", "must be an object");
@@ -480,7 +492,10 @@ export function validateWave1ReleaseMetadata(value) {
 
   const migrationHooks = validateHooks(value.migrationHooks, issues);
   const rollbackTarget = validateRollbackTarget(value.rollbackTarget, issues);
-  const releaseTarget = validateReleaseTarget(value.releaseTarget, issues);
+  const releaseTarget =
+    value.releaseTarget === undefined
+      ? synthesizeReleaseTarget(value)
+      : validateReleaseTarget(value.releaseTarget, issues);
 
   if (
     !isRecord(value.validation) ||

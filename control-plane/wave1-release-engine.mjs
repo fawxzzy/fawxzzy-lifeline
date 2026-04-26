@@ -54,12 +54,73 @@ function appReleaseRoot(rootDir, appName) {
   return path.join(releaseRoot(rootDir), appName);
 }
 
+function hasPathEscape(relativePath) {
+  return (
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativePath)
+  );
+}
+
+function assertPathWithinRoot(rootPath, candidatePath, label) {
+  const relativePath = path.relative(rootPath, candidatePath);
+  if (relativePath === "" || !hasPathEscape(relativePath)) {
+    return candidatePath;
+  }
+
+  throw new Error(`${label} must stay within ${rootPath}`);
+}
+
+function validateReleaseId(releaseId) {
+  if (typeof releaseId !== "string" || releaseId.trim().length === 0) {
+    throw new Error("Release id must be a non-empty string.");
+  }
+
+  if (path.isAbsolute(releaseId)) {
+    throw new Error(`Invalid releaseId "${releaseId}": absolute paths are not allowed.`);
+  }
+
+  if (releaseId.includes("/") || releaseId.includes("\\")) {
+    throw new Error(
+      `Invalid releaseId "${releaseId}": path separators are not allowed.`,
+    );
+  }
+
+  if (releaseId === "." || releaseId === "..") {
+    throw new Error(
+      `Invalid releaseId "${releaseId}": dot-segment values are not allowed.`,
+    );
+  }
+
+  return releaseId;
+}
+
+function resolveReleaseScopedPath(rootDir, appName, releaseId, ...segments) {
+  const appRoot = path.resolve(appReleaseRoot(rootDir, appName));
+  const validatedReleaseId = validateReleaseId(releaseId);
+  const releaseDir = assertPathWithinRoot(
+    appRoot,
+    path.resolve(appRoot, validatedReleaseId),
+    `Release directory for ${appName}/${releaseId}`,
+  );
+
+  if (segments.length === 0) {
+    return releaseDir;
+  }
+
+  return assertPathWithinRoot(
+    appRoot,
+    path.resolve(releaseDir, ...segments),
+    `Release path for ${appName}/${releaseId}`,
+  );
+}
+
 function releaseDirectory(rootDir, appName, releaseId) {
-  return path.join(appReleaseRoot(rootDir, appName), releaseId);
+  return resolveReleaseScopedPath(rootDir, appName, releaseId);
 }
 
 function releaseMetadataPath(rootDir, appName, releaseId) {
-  return path.join(releaseDirectory(rootDir, appName, releaseId), "metadata.json");
+  return resolveReleaseScopedPath(rootDir, appName, releaseId, "metadata.json");
 }
 
 function currentPointerPath(rootDir, appName) {

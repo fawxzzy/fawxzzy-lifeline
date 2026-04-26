@@ -86,6 +86,25 @@ const roundTripped = parseWave1ReleaseMetadata(
 assert.equal(roundTripped.issues.length, 0, `unexpected release metadata issues: ${JSON.stringify(roundTripped.issues, null, 2)}`);
 assert.deepEqual(roundTripped.metadata, dryRunPlan.releaseMetadata);
 
+const legacyV1Metadata = {
+  ...dryRunPlan.releaseMetadata,
+};
+delete legacyV1Metadata.releaseTarget;
+
+const roundTrippedLegacy = parseWave1ReleaseMetadata(
+  JSON.stringify(legacyV1Metadata, null, 2),
+);
+assert.equal(
+  roundTrippedLegacy.issues.length,
+  0,
+  `unexpected legacy release metadata issues: ${JSON.stringify(roundTrippedLegacy.issues, null, 2)}`,
+);
+assert.deepEqual(roundTrippedLegacy.metadata?.releaseTarget, {
+  kind: "single-host-immutable",
+  releaseId: "release-20260421-0002",
+  artifactRef: sampleManifest.imageRef,
+});
+
 const deterministicReleaseId = deriveWave1ReleaseId(sampleManifest);
 assert.equal(
   deterministicReleaseId,

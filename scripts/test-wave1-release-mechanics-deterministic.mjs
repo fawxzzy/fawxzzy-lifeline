@@ -1,8 +1,12 @@
 import { strict as assert } from "node:assert";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+import {
+  buildWave1ReleaseMetadata,
+  serializeWave1ReleaseMetadata,
+} from "../control-plane/wave1-deploy-contract.mjs";
 import {
   activateWave1Release,
   persistWave1Release,
@@ -43,12 +47,52 @@ async function readJson(rootDir, relativePath) {
   return JSON.parse(await readFile(path.join(rootDir, relativePath), "utf8"));
 }
 
+async function pathExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function writeLegacyReleaseMetadata(rootDir, manifest, options) {
+  const builtMetadata = buildWave1ReleaseMetadata(manifest, options);
+  assert.equal(
+    builtMetadata.issues.length,
+    0,
+    `unexpected legacy metadata build issues: ${JSON.stringify(builtMetadata.issues)}`,
+  );
+
+  const legacyMetadata = {
+    ...builtMetadata.metadata,
+  };
+  delete legacyMetadata.releaseTarget;
+
+  const releaseDir = path.join(
+    rootDir,
+    ".lifeline",
+    "releases",
+    legacyMetadata.appName,
+    legacyMetadata.releaseId,
+  );
+  await mkdir(releaseDir, { recursive: true });
+  await writeFile(
+    path.join(releaseDir, "metadata.json"),
+    `${serializeWave1ReleaseMetadata(legacyMetadata)}\n`,
+    "utf8",
+  );
+
+  return legacyMetadata;
+}
+
 const tempRoot = await mkdtemp(
   path.join(os.tmpdir(), "lifeline-release-mechanics-"),
 );
 
 try {
   const appName = "lifeline-pilot";
+  const outsidePath = path.join(tempRoot, ".lifeline", "outside");
 
   const releaseA = await persistWave1Release(
     createManifest({
@@ -76,6 +120,46 @@ try {
     releaseA.receipt.releaseDirectory,
     ".lifeline/releases/lifeline-pilot/release-20260425-0001",
   );
+
+  await assert.rejects(
+    persistWave1Release(
+      createManifest({
+        appName,
+        artifactRef: "ghcr.io/fawxzzy/lifeline-pilot@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        rollbackReleaseId: "bootstrap-release",
+        rollbackArtifactRef:
+          "ghcr.io/fawxzzy/lifeline-pilot@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      }),
+      {
+        rootDir: tempRoot,
+        releaseId: "../../outside",
+        createdAt: "2026-04-25T18:01:00.000Z",
+        receiptAt: "2026-04-25T18:01:00.000Z",
+      },
+    ),
+    /Invalid releaseId "\.\.\/\.\.\/outside": path separators are not allowed\./,
+  );
+  assert.equal(await pathExists(outsidePath), false);
+
+  await assert.rejects(
+    persistWave1Release(
+      createManifest({
+        appName,
+        artifactRef: "ghcr.io/fawxzzy/lifeline-pilot@sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        rollbackReleaseId: "bootstrap-release",
+        rollbackArtifactRef:
+          "ghcr.io/fawxzzy/lifeline-pilot@sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      }),
+      {
+        rootDir: tempRoot,
+        releaseId: "..\\..\\outside",
+        createdAt: "2026-04-25T18:02:00.000Z",
+        receiptAt: "2026-04-25T18:02:00.000Z",
+      },
+    ),
+    /Invalid releaseId "\.\.\\\.\.\\outside": path separators are not allowed\./,
+  );
+  assert.equal(await pathExists(outsidePath), false);
 
   const activationA = await activateWave1Release(
     tempRoot,
@@ -203,6 +287,80 @@ try {
   assert.equal(rollbackReceipt.releaseId, releaseA.releaseId);
   assert.equal(rollbackReceipt.previousReleaseId, releaseB.releaseId);
   assert.equal(rollbackReceipt.health.status, 200);
+
+  const legacyReleaseId = "release-20260425-legacy";
+  const legacyArtifactRef =
+    "ghcr.io/fawxzzy/lifeline-pilot@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+  const legacyMetadata = await writeLegacyReleaseMetadata(
+    tempRoot,
+    createManifest({
+      appName,
+      artifactRef: legacyArtifactRef,
+      rollbackReleaseId: releaseA.releaseId,
+      rollbackArtifactRef: releaseA.releaseMetadata.artifactRef,
+    }),
+    {
+      releaseId: legacyReleaseId,
+      createdAt: "2026-04-25T18:35:00.000Z",
+      dryRun: false,
+    },
+  );
+  const legacyActivation = await activateWave1Release(
+    tempRoot,
+    appName,
+    legacyReleaseId,
+    {
+      receiptAt: "2026-04-25T18:35:00.000Z",
+      checkHealth: async () => ({ ok: true, status: 200 }),
+    },
+  );
+  assert.equal(legacyActivation.ok, true);
+  assert.equal(legacyActivation.current.releaseId, legacyReleaseId);
+  assert.equal(legacyActivation.previous.releaseId, releaseA.releaseId);
+  assert.deepEqual(legacyActivation.receipt.releaseTarget, {
+    kind: "single-host-immutable",
+    releaseId: legacyReleaseId,
+    artifactRef: legacyArtifactRef,
+  });
+
+  const releaseD = await persistWave1Release(
+    createManifest({
+      appName,
+      artifactRef: "ghcr.io/fawxzzy/lifeline-pilot@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      rollbackReleaseId: legacyReleaseId,
+      rollbackArtifactRef: legacyArtifactRef,
+    }),
+    {
+      rootDir: tempRoot,
+      releaseId: "release-20260425-0004",
+      createdAt: "2026-04-25T18:40:00.000Z",
+      receiptAt: "2026-04-25T18:40:00.000Z",
+    },
+  );
+  const activationD = await activateWave1Release(
+    tempRoot,
+    appName,
+    releaseD.releaseId,
+    {
+      receiptAt: "2026-04-25T18:45:00.000Z",
+      checkHealth: async () => ({ ok: true, status: 200 }),
+    },
+  );
+  assert.equal(activationD.ok, true);
+  assert.equal(activationD.previous.releaseId, legacyReleaseId);
+
+  const legacyRollback = await rollbackWave1Release(tempRoot, appName, {
+    receiptAt: "2026-04-25T18:50:00.000Z",
+    checkHealth: async () => ({ ok: true, status: 200 }),
+  });
+  assert.equal(legacyRollback.ok, true);
+  assert.equal(legacyRollback.current.releaseId, legacyReleaseId);
+  assert.equal(legacyRollback.previous.releaseId, releaseD.releaseId);
+  assert.deepEqual(legacyRollback.receipt.releaseTarget, {
+    kind: "single-host-immutable",
+    releaseId: legacyMetadata.releaseId,
+    artifactRef: legacyMetadata.artifactRef,
+  });
 
   console.log("Wave 1 release mechanics deterministic verification passed.");
 } finally {
