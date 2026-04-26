@@ -4,7 +4,10 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 import {
+  buildWave1ReleaseMetadata,
+  buildWave1ReleasePlan,
   buildWave1DryRunPlan,
+  deriveWave1ReleaseId,
   parseWave1ReleaseMetadata,
   serializeWave1ReleaseMetadata,
   validateWave1DeployManifest,
@@ -47,6 +50,7 @@ const validation = validateWave1DeployManifest(sampleManifest);
 assert.equal(validation.issues.length, 0, `unexpected deploy issues: ${JSON.stringify(validation.issues, null, 2)}`);
 assert.equal(validation.manifest?.contractVersion, WAVE1_DEPLOY_CONTRACT_VERSION);
 assert.equal(validation.manifest?.artifactRef, sampleManifest.imageRef);
+assert.equal(validation.manifest?.sourceAdapter?.kind, "imageRef");
 assert.equal(JSON.stringify(sampleManifest), originalManifestSnapshot, "dry-run validation must not mutate the input manifest");
 
 const dryRunPlan = buildWave1DryRunPlan(sampleManifest, {
@@ -62,18 +66,103 @@ assert.deepEqual(
     "validate-manifest",
     "canonicalize-artifact-ref",
     "prepare-release-metadata",
+    "derive-release-target",
     "preserve-rollback-target",
   ],
 );
 assert.equal(dryRunPlan.releaseMetadata?.contractVersion, WAVE1_RELEASE_METADATA_VERSION);
 assert.equal(dryRunPlan.releaseMetadata?.artifactRef, sampleManifest.imageRef);
 assert.equal(dryRunPlan.releaseMetadata?.dryRun, true);
+assert.equal(dryRunPlan.releaseMetadata?.sourceAdapter?.kind, "imageRef");
+assert.deepEqual(dryRunPlan.releaseMetadata?.releaseTarget, {
+  kind: "single-host-immutable",
+  releaseId: "release-20260421-0002",
+  artifactRef: sampleManifest.imageRef,
+});
 
 const roundTripped = parseWave1ReleaseMetadata(
   serializeWave1ReleaseMetadata(dryRunPlan.releaseMetadata),
 );
 assert.equal(roundTripped.issues.length, 0, `unexpected release metadata issues: ${JSON.stringify(roundTripped.issues, null, 2)}`);
 assert.deepEqual(roundTripped.metadata, dryRunPlan.releaseMetadata);
+
+const deterministicReleaseId = deriveWave1ReleaseId(sampleManifest);
+assert.equal(
+  deterministicReleaseId,
+  deriveWave1ReleaseId(sampleManifest),
+  "release ids must be deterministic for identical normalized manifests",
+);
+assert.ok(
+  deterministicReleaseId?.startsWith("release-lifeline-pilot-"),
+  `expected deterministic release id prefix, got ${deterministicReleaseId}`,
+);
+
+const branchShapedManifest = {
+  contractVersion: WAVE1_DEPLOY_CONTRACT_VERSION,
+  appName: "trove",
+  repo: "https://github.com/fawxzzy/fawxzzy-trove.git",
+  branch: "codex/trove-one-page-cleanup",
+  route: {
+    domain: "trove.fawxzzy.com",
+    path: "/",
+  },
+  envRefs: [],
+  healthcheckPath: "/healthz.json",
+  migrationHooks: {
+    preDeploy: ["npm run verify"],
+    postDeploy: ["npm run smoke:lifeline"],
+    rollback: ["lifeline down trove"],
+  },
+  rollbackTarget: {
+    releaseId: "pre-w4-a9c347b",
+    artifactRef:
+      "git+https://github.com/fawxzzy/fawxzzy-trove.git#a9c347b5bc510503691478aa680e34cfa9ab81a7",
+    strategy: "restore",
+  },
+};
+const branchValidation = validateWave1DeployManifest(branchShapedManifest);
+assert.equal(branchValidation.issues.length, 0, `unexpected branch-shaped issues: ${JSON.stringify(branchValidation.issues, null, 2)}`);
+assert.equal(
+  branchValidation.manifest?.artifactRef,
+  "git+https://github.com/fawxzzy/fawxzzy-trove.git#codex/trove-one-page-cleanup",
+);
+assert.deepEqual(branchValidation.manifest?.sourceAdapter, {
+  kind: "branch",
+  repo: "https://github.com/fawxzzy/fawxzzy-trove.git",
+  branch: "codex/trove-one-page-cleanup",
+  canonicalArtifactRef:
+    "git+https://github.com/fawxzzy/fawxzzy-trove.git#codex/trove-one-page-cleanup",
+});
+
+const branchReleaseMetadata = buildWave1ReleaseMetadata(branchShapedManifest, {
+  releaseId: "release-trove-branch-adapter",
+  createdAt: "2026-04-25T18:00:00.000Z",
+});
+assert.equal(branchReleaseMetadata.issues.length, 0);
+assert.equal(
+  branchReleaseMetadata.metadata?.releaseTarget.releaseId,
+  "release-trove-branch-adapter",
+);
+assert.equal(branchReleaseMetadata.metadata?.sourceAdapter?.kind, "branch");
+
+const releasePlan = buildWave1ReleasePlan(branchShapedManifest, {
+  createdAt: "2026-04-25T18:00:00.000Z",
+});
+assert.equal(releasePlan.validation.status, "passed");
+assert.deepEqual(
+  releasePlan.steps.map((step) => step.step),
+  [
+    "validate-manifest",
+    "canonicalize-artifact-ref",
+    "derive-release-id",
+    "derive-release-target",
+    "preserve-rollback-target",
+  ],
+);
+assert.equal(
+  releasePlan.releaseMetadata?.releaseTarget.artifactRef,
+  branchValidation.manifest?.artifactRef,
+);
 
 const invalidManifest = validateWave1DeployManifest({
   ...sampleManifest,
@@ -117,6 +206,9 @@ assert.equal(
 assert.ok(
   docs.includes("artifactRef") &&
     docs.includes("imageRef") &&
+    docs.includes("repo") &&
+    docs.includes("branch") &&
+    docs.includes("releaseTarget") &&
     docs.includes("rollbackTarget.strategy"),
   "docs/contracts/wave1-deploy-contract.md should describe the canonical deploy and metadata fields",
 );

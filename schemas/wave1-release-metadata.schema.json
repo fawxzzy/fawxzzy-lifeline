@@ -13,6 +13,7 @@
     "healthcheckPath",
     "migrationHooks",
     "rollbackTarget",
+    "releaseTarget",
     "dryRun",
     "createdAt",
     "validation"
@@ -118,6 +119,65 @@
           ]
         },
         "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourceAdapter": {
+      "type": "object",
+      "required": [
+        "kind",
+        "canonicalArtifactRef"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "artifactRef",
+            "imageRef",
+            "branch"
+          ]
+        },
+        "canonicalArtifactRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "imageRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repo": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "releaseTarget": {
+      "type": "object",
+      "required": [
+        "kind",
+        "releaseId",
+        "artifactRef"
+      ],
+      "properties": {
+        "kind": {
+          "const": "single-host-immutable"
+        },
+        "releaseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactRef": {
           "type": "string",
           "minLength": 1
         }

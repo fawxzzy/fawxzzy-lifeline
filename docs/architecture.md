@@ -67,7 +67,20 @@ Runtime behavior:
 
 Logs remain file-based at `.lifeline/logs/<app>.log` and include both app output and supervisor lifecycle events.
 
-## 6. Receipt-backed execution and proof surfaces
+## 6. Wave 1 release target surface
+
+Wave 1 release planning and activation stay local-first:
+
+- the deploy contract normalizes `artifactRef`, `imageRef`, and branch-shaped `repo` + `branch` inputs into one canonical release target
+- release ids are deterministic from the normalized release target unless an operator pins a specific id
+- immutable release metadata lands at `.lifeline/releases/<app>/<releaseId>/metadata.json`
+- mutable activation state is limited to `current.json` and `previous.json`
+- activation is health-gated, and failed candidates must not disturb the last known-good release pointers
+- plan, activation, failed activation, and rollback each emit receipts keyed to concrete release ids
+
+This is the first execution slice that replaces "deploy a branch" with "deploy a concrete release target" without introducing hosted control-plane behavior.
+
+## 7. Receipt-backed execution and proof surfaces
 
 Lifeline exposes two narrow auditable lanes after validation/runtime work:
 
