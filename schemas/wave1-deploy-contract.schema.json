@@ -20,6 +20,14 @@
       "type": "string",
       "minLength": 1
     },
+    "repo": {
+      "type": "string",
+      "minLength": 1
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1
+    },
     "artifactRef": {
       "type": "string",
       "minLength": 1
@@ -129,6 +137,12 @@
     {
       "required": [
         "imageRef"
+      ]
+    },
+    {
+      "required": [
+        "repo",
+        "branch"
       ]
     }
   ],

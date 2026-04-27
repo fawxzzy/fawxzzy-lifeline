@@ -14,7 +14,7 @@ The deploy manifest is a JSON object with:
 
 - `contractVersion`
 - `appName`
-- `artifactRef` or `imageRef`
+- `artifactRef`, `imageRef`, or `repo` + `branch`
 - `route.domain`
 - `route.path` when the route is not rooted
 - `envRefs`
@@ -26,19 +26,26 @@ The deploy manifest is a JSON object with:
 - `rollbackTarget.artifactRef`
 - `rollbackTarget.strategy`
 
-Canonical validation accepts `artifactRef` or `imageRef` on input and normalizes to `artifactRef` for downstream use.
+Canonical validation accepts `artifactRef`, `imageRef`, or a branch-shaped `repo` + `branch` input and normalizes all of them to `artifactRef` for downstream use.
 
 ## Release metadata shape
 
 Release metadata is the persisted record ops and rollback tooling consume after a deploy decision. It keeps the normalized deploy contract plus:
 
 - `releaseId`
+- `releaseTarget.kind`
+- `releaseTarget.releaseId`
+- `releaseTarget.artifactRef`
+- `sourceAdapter.kind` when a compatibility adapter was used
 - `dryRun`
 - `createdAt`
 - `validation.status`
 - `validation.issues`
 
-The persisted metadata stays JSON only, with no runtime-only state embedded.
+`releaseId` is deterministic from the normalized release target unless a caller intentionally pins it. `releaseTarget` is the concrete Wave 1 handoff surface for downstream consumers: a single-host immutable release identified by `releaseId` and `artifactRef`.
+When the input arrived as `imageRef` or `repo` + `branch`, Lifeline preserves that fact in `sourceAdapter` while still normalizing the persisted release target to `artifactRef`.
+
+The persisted metadata stays JSON only, with no hosted control-plane state embedded.
 
 ## Dry-run path
 
@@ -47,12 +54,26 @@ The dry-run path is a pure planning path:
 1. validate the deploy manifest
 2. canonicalize `artifactRef`
 3. assemble release metadata
-4. preserve rollback target metadata unchanged
+4. derive the concrete release target
+5. preserve rollback target metadata unchanged
 
 Dry-run planning must not mutate the input manifest or write state. It only emits a plan object and a release metadata preview.
+
+## Immutable single-host release engine
+
+Wave 1 release execution is local-first and single-host:
+
+- each release is persisted once at `.lifeline/releases/<app>/<releaseId>/metadata.json`
+- release directories are immutable after the metadata lands
+- mutable activation state lives only in `.lifeline/releases/<app>/current.json` and `previous.json`
+- activation is health-gated before the current pointer advances
+- failed health gates preserve the existing current and previous release pointers
+- rollback promotes the previous known-good release back to current
+- plan, activation, failed activation, and rollback each emit a receipt under `.lifeline/releases/<app>/receipts/`
+
+This keeps the durable release target explicit without widening Lifeline into preview URLs, hosted control-plane behavior, domains, or TLS management.
 
 ## Schema files
 
 - [`../../schemas/wave1-deploy-contract.schema.json`](../../schemas/wave1-deploy-contract.schema.json)
 - [`../../schemas/wave1-release-metadata.schema.json`](../../schemas/wave1-release-metadata.schema.json)
-
