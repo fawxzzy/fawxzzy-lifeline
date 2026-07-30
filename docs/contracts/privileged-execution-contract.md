@@ -30,6 +30,13 @@ Each later artifact must preserve the identifiers needed to reconstruct the chai
 | `atlas.privileged-action.request.v1` | v1 | Lifeline execution surface | declares the requested bounded operation and requested capability scope | `src/core/privileged-execution.ts` | `examples/privileged-execution/read-only-scan.request.json`, `examples/privileged-execution/dry-run-command.request.json` |
 | `atlas.approval.receipt.v1` | v1 | Lifeline execution surface; approval policy may be supplied by Playbook | records approval status and granted scope for a request | `src/core/privileged-execution.ts` | `examples/privileged-execution/read-only-scan.approval.json`, `examples/privileged-execution/dry-run-command.approval.json`, `examples/privileged-execution/dry-run-command.rejected.approval.json`, `examples/privileged-execution/dry-run-command.expired.approval.json` |
 | `atlas.privileged-action.receipt.v1` | v1 | Lifeline execution surface | records the actual execution attempt and lineage trail | `src/core/privileged-execution.ts` | produced by `lifeline execute` and receipt repair flows |
+| `atlas.supabase.execution-control-plane.profile.v1` | v1 | Lifeline execution surface | freezes the blocked source profile for a future Platform executable-bundle worker | `src/core/supabase-execution-profile.ts` | `examples/privileged-execution/supabase-execution-profile.blocked.json` |
+
+The Supabase profile is a source-only specialization of the capability layer.
+It names the future executor and its evidence denominator without registering a
+tool, installing a trust anchor, adding provider connectivity, or authorizing
+execution. See
+[`supabase-execution-control-plane-profile.md`](supabase-execution-control-plane-profile.md).
 
 ## Required lineage keys
 
