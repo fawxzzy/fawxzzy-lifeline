@@ -1,0 +1,372 @@
+import { stableJsonStringify } from "./receipt-store.js";
+
+export const SUPABASE_EXECUTION_PROFILE_CONTRACT =
+  "atlas.supabase.execution-control-plane.profile.v1";
+export const SUPABASE_EXECUTOR_IDENTITY =
+  "lifeline.supabase-bundle-executor.v1";
+
+const TRUST_ANCHORS = [
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "DISPOSABLE_TARGET_BOOTSTRAP_APPLY_AUTHORITY",
+    signature_domain:
+      "fawxzzy.platform.disposable-target-bootstrap.apply-authority.v1",
+    source_verifier_reference:
+      "disposable-target-bootstrap-authority-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "DISPOSABLE_TARGET_BOOTSTRAP_AUTHORITY_CONSUMPTION",
+    signature_domain:
+      "fawxzzy.platform.disposable-target-bootstrap.authority-consumption.v1",
+    source_verifier_reference:
+      "disposable-target-bootstrap-authority-consumption-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "AUTH_APP_DATA_EXECUTION_AUTHORITY",
+    signature_domain:
+      "fawxzzy.platform.auth-app-data.execution-authority.v1",
+    source_verifier_reference: "auth-app-data-authority-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "AUTH_APP_DATA_EXECUTOR_CAPABILITY",
+    signature_domain:
+      "fawxzzy.platform.auth-app-data.executor-capability.v1",
+    source_verifier_reference: "auth-app-data-executor-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "AUTH_APP_DATA_WRITE_BARRIER_AUTHORITY",
+    signature_domain:
+      "fawxzzy.platform.auth-app-data.write-barrier-authority.v1",
+    source_verifier_reference:
+      "auth-app-data-write-barrier-authority-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "AUTH_APP_DATA_WRITE_BARRIER_CONSUMPTION",
+    signature_domain:
+      "fawxzzy.platform.auth-app-data.write-barrier-consumption.v1",
+    source_verifier_reference:
+      "auth-app-data-write-barrier-consumption-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "STORAGE_EDGE_REALTIME_FORWARD_EVIDENCE_LEDGER",
+    signature_domain:
+      "fawxzzy.platform.storage-edge-realtime.forward-evidence-ledger.v1",
+    source_verifier_reference:
+      "storage-edge-realtime-forward-evidence-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "STORAGE_EDGE_REALTIME_PER_SURFACE_ROLLBACK",
+    signature_domain:
+      "fawxzzy.platform.storage-edge-realtime.per-surface-rollback.v1",
+    source_verifier_reference:
+      "storage-edge-realtime-per-surface-rollback-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "STORAGE_EDGE_REALTIME_DISPOSAL_ABSENCE",
+    signature_domain:
+      "fawxzzy.platform.storage-edge-realtime.disposal-absence.v1",
+    source_verifier_reference:
+      "storage-edge-realtime-disposal-absence-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "STORAGE_EDGE_REALTIME_CREDENTIAL_REVOCATION",
+    signature_domain:
+      "fawxzzy.platform.storage-edge-realtime.credential-revocation.v1",
+    source_verifier_reference:
+      "storage-edge-realtime-credential-revocation-verifier-v1",
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "GITHUB_RELEASE_ATTESTATION",
+    signature_domain: "fawxzzy-platform:github-release-attestation:v1",
+    source_verifier_reference: null,
+    state: "UNPROVISIONED_BLOCKED",
+  },
+  {
+    algorithm: "Ed25519",
+    installation_ref: null,
+    key_id: null,
+    public_key_spki_sha256: null,
+    role: "GITHUB_RELEASE_INDEPENDENT_READBACK",
+    signature_domain:
+      "fawxzzy-platform:github-release-independent-readback:v1",
+    source_verifier_reference: null,
+    state: "UNPROVISIONED_BLOCKED",
+  },
+] as const;
+
+const CANONICAL_PROFILE = {
+  contract_version: SUPABASE_EXECUTION_PROFILE_CONTRACT,
+  credentials: {
+    connection_secret_ref:
+      "secret://lifeline/supabase/executor/database-url",
+    management_api_oauth_token_ref:
+      "secret://lifeline/supabase/executor/management-api-oauth-token",
+    permitted_future_operations: [
+      "VERIFY_BUNDLE",
+      "TRANSACTIONAL_ORDERED_APPLY",
+      "CATALOG_READ_A",
+      "CATALOG_READ_B",
+      "NEGATIVE_PROBES",
+      "INVERSE_ROLLBACK",
+    ],
+    prohibited_operations: [
+      "SEED",
+      "RESET",
+      "MIGRATION_REPAIR",
+      "BROAD_DROP",
+      "PRODUCTION",
+      "SOURCE_MUTATION",
+      "SOURCE_RETIREMENT",
+      "CREDENTIAL_VALUE_SERIALIZATION",
+    ],
+    selected_transport: "ACTION_TIME_REQUIRED",
+    transport_options: [
+      "DIRECT_POSTGRES_5432_SSL_REQUIRED",
+      "SESSION_POOLER_5432_SSL_REQUIRED",
+    ],
+    values_present: false,
+  },
+  data_api_reader: {
+    allowed_persisted_fields: [
+      "db_schema",
+      "db_extra_search_path",
+      "max_rows",
+      "db_pool",
+      "db_pool_acquisition_timeout",
+      "status",
+      "observed_at",
+      "sanitized_digest",
+    ],
+    authentication_selection: "EXACTLY_ONE_AUTHENTICATION_MECHANISM",
+    fine_grained_permission: "data_api_config_read",
+    forbidden_persisted_fields: [
+      "jwt_secret",
+      "unknown_provider_fields",
+      "raw_provider_response",
+    ],
+    method: "GET",
+    oauth_scope: "rest:read",
+    path_template: "/v1/projects/{ref}/postgrest",
+    write_scope: "ABSENT_SEPARATELY_GATED",
+  },
+  executor: {
+    credentials_included: false,
+    identity: SUPABASE_EXECUTOR_IDENTITY,
+    implementation_state: "PROFILE_DEFINED_EXECUTOR_UNIMPLEMENTED",
+    provider_connectivity_included: false,
+    sql_execution_authorized: false,
+    version: "1.0.0",
+  },
+  inverse_capabilities: [
+    {
+      mechanism: "INDEPENDENT_GITHUB_VAULT_BACKUP_AND_RESTORE_CONTRACT",
+      state: "BLOCKED_UNPROVEN",
+    },
+    {
+      mechanism:
+        "ROLLBACK_PREIMAGE_PLAN_AUTHORITY_AND_POSTIMAGE_EQUALS_PREIMAGE",
+      state: "BLOCKED_UNPROVEN",
+    },
+    {
+      mechanism: "REVERSE_ORDER_STORAGE_EDGE_REALTIME_INVERSE_RECEIPTS",
+      state: "BLOCKED_UNPROVEN",
+    },
+    {
+      mechanism: "CREDENTIAL_REVOCATION_RECEIPT",
+      state: "BLOCKED_UNPROVEN",
+    },
+    {
+      mechanism: "TARGET_DISPOSAL_COMPLETION",
+      state: "BLOCKED_UNPROVEN",
+    },
+    {
+      mechanism: "DISTINCT_TARGET_ABSENCE_PROOF",
+      state: "BLOCKED_UNPROVEN",
+    },
+    {
+      mechanism: "SOURCE_SYSTEMS_REMAIN_ACTIVE",
+      state: "REQUIRED",
+    },
+  ],
+  lifecycle: {
+    apply_admitted: false,
+    execution: "EXECUTION_BLOCKED",
+    source: "SOURCE_READY",
+  },
+  platform_binding: {
+    contract_binding_set_sha256:
+      "83ece73a522f1843616d781fdd99d595128c75a30d7267d1eab82cb0189da1b0",
+    executable_bundle_manifest_raw_sha256:
+      "10b616019af3edad152f7a1cc922cbab20e5add81405f1f542053b54dacb2a54",
+    executable_bundle_manifest_version: "1.0.0",
+    expected_effects_and_rollback_set_sha256:
+      "a152afa30437e5e163bb0cfbeab7168330830c696289225089f40c1ddd47a4a9",
+    governance_manifest_sha256:
+      "82e7ecad9a68addff14c43c3bc237c54af2dd5d48cda454c0e1c121a3e4536ec",
+    main: "2a871f8a9a7f3c030d7dca259de9ca88d336ec04",
+    migration_count: 122,
+    migration_package_sha256:
+      "b65d1c0b73607218cc37826d9bb77c25704ea18f957abba7b5667a79d0a2c8db",
+    ordered_artifact_set_sha256:
+      "899adf8cab5d5e7a7ece1806022aefccc562e0c21513cdb009310985b399ccfc",
+    source_state: "SOURCE_READY_EXECUTION_BLOCKED_APPLY_ADMITTED_FALSE",
+    toolchain_set_sha256:
+      "0400f7536a3238c08c0d7c1c577ec67b983eeaf63ec177a50ad6e6f2bb9f2659",
+    tree: "718b816d262f05486c6692c67629e57a4846469e",
+  },
+  profile_id: "lifeline-supabase-execution-control-plane-profile-v1",
+  redaction: {
+    action_time_project_ref_serialized: false,
+    aggregate_and_digest_only: true,
+    credential_values_forbidden: true,
+    machine_paths_forbidden: true,
+    raw_provider_responses_forbidden: true,
+    raw_sql_forbidden: true,
+  },
+  trust_anchors: TRUST_ANCHORS,
+} as const;
+
+type JsonRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function compareCanonical(
+  expected: unknown,
+  actual: unknown,
+  path: string,
+  failures: string[],
+): void {
+  if (Array.isArray(expected)) {
+    if (!Array.isArray(actual)) {
+      failures.push(`${path} must be the canonical ordered array.`);
+      return;
+    }
+    if (actual.length !== expected.length) {
+      failures.push(
+        `${path} must contain exactly ${expected.length} ordered entries.`,
+      );
+    }
+    const length = Math.min(actual.length, expected.length);
+    for (let index = 0; index < length; index += 1) {
+      compareCanonical(
+        expected[index],
+        actual[index],
+        `${path}[${index}]`,
+        failures,
+      );
+    }
+    return;
+  }
+
+  if (isRecord(expected)) {
+    if (!isRecord(actual)) {
+      failures.push(`${path} must be the canonical object.`);
+      return;
+    }
+    const expectedKeys = Object.keys(expected).sort();
+    const actualKeys = Object.keys(actual).sort();
+    if (stableJsonStringify(actualKeys) !== stableJsonStringify(expectedKeys)) {
+      failures.push(`${path} keys must match the closed canonical key set.`);
+    }
+    for (const key of expectedKeys) {
+      if (!Object.prototype.hasOwnProperty.call(actual, key)) {
+        continue;
+      }
+      compareCanonical(
+        expected[key],
+        actual[key],
+        `${path}.${key}`,
+        failures,
+      );
+    }
+    return;
+  }
+
+  if (actual !== expected) {
+    failures.push(`${path} must match the canonical primitive value.`);
+  }
+}
+
+const CANONICAL_PROFILE_JSON = stableJsonStringify(CANONICAL_PROFILE);
+
+export function getCanonicalSupabaseExecutionProfile(): JsonRecord {
+  return JSON.parse(CANONICAL_PROFILE_JSON) as JsonRecord;
+}
+
+export function validateSupabaseExecutionProfile(value: unknown): string[] {
+  const failures: string[] = [];
+  try {
+    compareCanonical(CANONICAL_PROFILE, value, "profile", failures);
+  } catch {
+    failures.push(
+      "profile contains an unsupported or inaccessible candidate value.",
+    );
+  }
+  return failures;
+}
+
+export function assertSupabaseExecutionProfile(
+  value: unknown,
+): asserts value is JsonRecord {
+  const failures = validateSupabaseExecutionProfile(value);
+  if (failures.length > 0) {
+    throw new Error(
+      `Supabase execution-control-plane profile validation failed:\n- ${failures.join("\n- ")}`,
+    );
+  }
+}
