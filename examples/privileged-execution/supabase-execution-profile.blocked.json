@@ -54,7 +54,7 @@
   "executor": {
     "credentials_included": false,
     "identity": "lifeline.supabase-bundle-executor.v1",
-    "implementation_state": "PROFILE_DEFINED_EXECUTOR_UNIMPLEMENTED",
+    "implementation_state": "OFFLINE_BUNDLE_EXECUTOR_SOURCE_IMPLEMENTED_LIVE_ADAPTER_UNINSTALLED",
     "provider_connectivity_included": false,
     "sql_execution_authorized": false,
     "version": "1.0.0"

@@ -11,9 +11,7 @@
   "bin": {
     "lifeline": "dist/cli.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "board:export": "node scripts/export-project-board-owner.mjs",
     "board:export:check": "node scripts/export-project-board-owner.mjs --check",
@@ -21,7 +19,7 @@
     "test:lifeline-root": "node scripts/test-lifeline-root-deterministic.mjs",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "verify": "pnpm typecheck && pnpm build && pnpm test:lifeline-root && pnpm test:wave1-deploy-contract && pnpm test:wave1-release-receipt && pnpm test:wave1-release-mechanics && pnpm test:wave1-release-cli && pnpm test:wave1-release-replay && pnpm test:wave1-operator-evidence && pnpm test:topology-manifest && pnpm test:privileged-execution-bridge && pnpm test:privileged-execution-repair && pnpm test:supabase-execution-profile && pnpm test:ui-proof-receipt && pnpm board:export:check && pnpm test:board:export",
+    "verify": "pnpm typecheck && pnpm build && pnpm test:lifeline-root && pnpm test:wave1-deploy-contract && pnpm test:wave1-release-receipt && pnpm test:wave1-release-mechanics && pnpm test:wave1-release-cli && pnpm test:wave1-release-replay && pnpm test:wave1-operator-evidence && pnpm test:topology-manifest && pnpm test:privileged-execution-bridge && pnpm test:privileged-execution-repair && pnpm test:supabase-execution-profile && pnpm test:supabase-bundle-executor && pnpm test:ui-proof-receipt && pnpm board:export:check && pnpm test:board:export",
     "check": "biome check .",
     "format": "biome format --write .",
     "validate:fitness": "node dist/cli.js validate examples/fitness-app.lifeline.yml",
@@ -77,6 +75,7 @@
     "test:privileged-execution-bridge": "node scripts/test-privileged-execution-worker-bridge-deterministic.mjs",
     "test:privileged-execution-repair": "node scripts/test-privileged-execution-receipt-repair-deterministic.mjs",
     "test:supabase-execution-profile": "node scripts/test-supabase-execution-profile-deterministic.mjs",
+    "test:supabase-bundle-executor": "node scripts/test-supabase-bundle-executor-deterministic.mjs",
     "test:ui-proof-receipt": "node scripts/test-ui-proof-receipt-deterministic.mjs",
     "repair:privileged-receipts": "node scripts/repair-privileged-execution-receipts.mjs",
     "verify:startup-roundtrip": "pnpm lifeline startup enable && pnpm lifeline startup status && pnpm lifeline startup disable",

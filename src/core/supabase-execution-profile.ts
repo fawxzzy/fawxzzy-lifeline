@@ -1,5 +1,13 @@
 import { stableJsonStringify } from "./receipt-store.js";
 
+const isNativeProxy = (
+  process as unknown as {
+    getBuiltinModule(name: "node:util"): {
+      types: { isProxy(value: unknown): boolean };
+    };
+  }
+).getBuiltinModule("node:util").types.isProxy;
+
 export const SUPABASE_EXECUTION_PROFILE_CONTRACT =
   "atlas.supabase.execution-control-plane.profile.v1";
 export const SUPABASE_EXECUTOR_IDENTITY =
@@ -36,8 +44,7 @@ const TRUST_ANCHORS = [
     key_id: null,
     public_key_spki_sha256: null,
     role: "AUTH_APP_DATA_EXECUTION_AUTHORITY",
-    signature_domain:
-      "fawxzzy.platform.auth-app-data.execution-authority.v1",
+    signature_domain: "fawxzzy.platform.auth-app-data.execution-authority.v1",
     source_verifier_reference: "auth-app-data-authority-verifier-v1",
     state: "UNPROVISIONED_BLOCKED",
   },
@@ -47,8 +54,7 @@ const TRUST_ANCHORS = [
     key_id: null,
     public_key_spki_sha256: null,
     role: "AUTH_APP_DATA_EXECUTOR_CAPABILITY",
-    signature_domain:
-      "fawxzzy.platform.auth-app-data.executor-capability.v1",
+    signature_domain: "fawxzzy.platform.auth-app-data.executor-capability.v1",
     source_verifier_reference: "auth-app-data-executor-verifier-v1",
     state: "UNPROVISIONED_BLOCKED",
   },
@@ -140,8 +146,7 @@ const TRUST_ANCHORS = [
     key_id: null,
     public_key_spki_sha256: null,
     role: "GITHUB_RELEASE_INDEPENDENT_READBACK",
-    signature_domain:
-      "fawxzzy-platform:github-release-independent-readback:v1",
+    signature_domain: "fawxzzy-platform:github-release-independent-readback:v1",
     source_verifier_reference: null,
     state: "UNPROVISIONED_BLOCKED",
   },
@@ -150,8 +155,7 @@ const TRUST_ANCHORS = [
 const CANONICAL_PROFILE = {
   contract_version: SUPABASE_EXECUTION_PROFILE_CONTRACT,
   credentials: {
-    connection_secret_ref:
-      "secret://lifeline/supabase/executor/database-url",
+    connection_secret_ref: "secret://lifeline/supabase/executor/database-url",
     management_api_oauth_token_ref:
       "secret://lifeline/supabase/executor/management-api-oauth-token",
     permitted_future_operations: [
@@ -205,7 +209,8 @@ const CANONICAL_PROFILE = {
   executor: {
     credentials_included: false,
     identity: SUPABASE_EXECUTOR_IDENTITY,
-    implementation_state: "PROFILE_DEFINED_EXECUTOR_UNIMPLEMENTED",
+    implementation_state:
+      "OFFLINE_BUNDLE_EXECUTOR_SOURCE_IMPLEMENTED_LIVE_ADAPTER_UNINSTALLED",
     provider_connectivity_included: false,
     sql_execution_authorized: false,
     version: "1.0.0",
@@ -285,27 +290,101 @@ function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function isProxyRepresentation(value: unknown): boolean {
+  return (
+    ((typeof value === "object" && value !== null) ||
+      typeof value === "function") &&
+    isNativeProxy(value)
+  );
+}
+
+function ownKeysEqual(
+  expected: readonly PropertyKey[],
+  actual: readonly PropertyKey[],
+): boolean {
+  return (
+    expected.length === actual.length &&
+    expected.every((key, index) => actual[index] === key)
+  );
+}
+
+function isCanonicalDataDescriptor(
+  descriptor: PropertyDescriptor | undefined,
+  enumerable: boolean,
+): descriptor is PropertyDescriptor & { value: unknown } {
+  return (
+    descriptor !== undefined &&
+    Object.prototype.hasOwnProperty.call(descriptor, "value") &&
+    !Object.prototype.hasOwnProperty.call(descriptor, "get") &&
+    !Object.prototype.hasOwnProperty.call(descriptor, "set") &&
+    descriptor.writable === true &&
+    descriptor.enumerable === enumerable &&
+    descriptor.configurable === true
+  );
+}
+
+function isCanonicalArrayLengthDescriptor(
+  descriptor: PropertyDescriptor | undefined,
+  expectedLength: number,
+): boolean {
+  return (
+    descriptor !== undefined &&
+    Object.prototype.hasOwnProperty.call(descriptor, "value") &&
+    descriptor.value === expectedLength &&
+    descriptor.writable === true &&
+    descriptor.enumerable === false &&
+    descriptor.configurable === false &&
+    !Object.prototype.hasOwnProperty.call(descriptor, "get") &&
+    !Object.prototype.hasOwnProperty.call(descriptor, "set")
+  );
+}
+
 function compareCanonical(
   expected: unknown,
   actual: unknown,
   path: string,
   failures: string[],
 ): void {
+  if (isProxyRepresentation(actual)) {
+    failures.push(`${path} must not use a Proxy representation.`);
+    return;
+  }
+
   if (Array.isArray(expected)) {
     if (!Array.isArray(actual)) {
       failures.push(`${path} must be the canonical ordered array.`);
       return;
     }
-    if (actual.length !== expected.length) {
+    if (Object.getPrototypeOf(actual) !== Array.prototype) {
+      failures.push(`${path} must use the canonical array prototype.`);
+      return;
+    }
+    const expectedKeys = Reflect.ownKeys(expected);
+    const actualKeys = Reflect.ownKeys(actual);
+    if (!ownKeysEqual(expectedKeys, actualKeys)) {
       failures.push(
-        `${path} must contain exactly ${expected.length} ordered entries.`,
+        `${path} keys must match the closed canonical array key set.`,
       );
     }
-    const length = Math.min(actual.length, expected.length);
-    for (let index = 0; index < length; index += 1) {
+    if (
+      !isCanonicalArrayLengthDescriptor(
+        Object.getOwnPropertyDescriptor(actual, "length"),
+        expected.length,
+      )
+    ) {
+      failures.push(`${path}.length must use the canonical array descriptor.`);
+    }
+    for (let index = 0; index < expected.length; index += 1) {
+      const descriptor = Object.getOwnPropertyDescriptor(actual, String(index));
+      if (!isCanonicalDataDescriptor(descriptor, true)) {
+        failures.push(
+          `${path}[${index}] must use a canonical own data-property descriptor.`,
+        );
+        continue;
+      }
       compareCanonical(
         expected[index],
-        actual[index],
+        descriptor.value,
         `${path}[${index}]`,
         failures,
       );
@@ -318,18 +397,29 @@ function compareCanonical(
       failures.push(`${path} must be the canonical object.`);
       return;
     }
-    const expectedKeys = Object.keys(expected).sort();
-    const actualKeys = Object.keys(actual).sort();
-    if (stableJsonStringify(actualKeys) !== stableJsonStringify(expectedKeys)) {
+    if (Object.getPrototypeOf(actual) !== Object.prototype) {
+      failures.push(`${path} must use the canonical record prototype.`);
+      return;
+    }
+    const expectedKeys = Reflect.ownKeys(expected);
+    const actualKeys = Reflect.ownKeys(actual);
+    if (!ownKeysEqual(expectedKeys, actualKeys)) {
       failures.push(`${path} keys must match the closed canonical key set.`);
     }
     for (const key of expectedKeys) {
-      if (!Object.prototype.hasOwnProperty.call(actual, key)) {
+      if (typeof key !== "string") {
+        continue;
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(actual, key);
+      if (!isCanonicalDataDescriptor(descriptor, true)) {
+        failures.push(
+          `${path}.${key} must use a canonical own data-property descriptor.`,
+        );
         continue;
       }
       compareCanonical(
         expected[key],
-        actual[key],
+        descriptor.value,
         `${path}.${key}`,
         failures,
       );
