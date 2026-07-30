@@ -56,7 +56,12 @@ function expectRejected(name, mutate) {
   check(failures.length > 0, `${name}: malformed profile was accepted`);
 }
 
-function expectSafelyRejected(name, candidate, forbiddenMarkers = []) {
+function expectSafelyRejected(
+  name,
+  candidate,
+  forbiddenMarkers = [],
+  expectedFailure = null,
+) {
   let failures;
   let threw = false;
   try {
@@ -67,6 +72,12 @@ function expectSafelyRejected(name, candidate, forbiddenMarkers = []) {
   check(!threw, `${name}: validator threw instead of failing closed`);
   check(failures.length > 0, `${name}: malformed profile was accepted`);
   const failureText = failures.join("\n");
+  if (expectedFailure !== null) {
+    check(
+      failureText.includes(expectedFailure),
+      `${name}: rejection did not prove the expected boundary`,
+    );
+  }
   for (const marker of forbiddenMarkers) {
     check(
       !failureText.includes(marker),
@@ -102,8 +113,8 @@ check(
   "canonical trust-anchor denominator is not exactly 12",
 );
 check(
-  new Set(profile.trust_anchors.map((anchor) => anchor.signature_domain)).size ===
-    12,
+  new Set(profile.trust_anchors.map((anchor) => anchor.signature_domain))
+    .size === 12,
   "canonical trust-anchor signature domains are not distinct",
 );
 check(
@@ -142,15 +153,14 @@ check(
 );
 check(
   profile.executor.implementation_state ===
-    "PROFILE_DEFINED_EXECUTOR_UNIMPLEMENTED" &&
+    "OFFLINE_BUNDLE_EXECUTOR_SOURCE_IMPLEMENTED_LIVE_ADAPTER_UNINSTALLED" &&
     profile.executor.provider_connectivity_included === false &&
     profile.executor.sql_execution_authorized === false,
-  "canonical executor profile claims implementation, connectivity, or SQL authority",
+  "canonical executor profile misstates offline source, live-adapter, connectivity, or SQL authority",
 );
 check(
   profile.inverse_capabilities.every(
-    (entry) =>
-      entry.state === "BLOCKED_UNPROVEN" || entry.state === "REQUIRED",
+    (entry) => entry.state === "BLOCKED_UNPROVEN" || entry.state === "REQUIRED",
   ),
   "canonical inverse capability is improperly promoted",
 );
@@ -168,7 +178,7 @@ expectRejected("apply promotion", (candidate) => {
   candidate.lifecycle.apply_admitted = true;
 });
 expectRejected("executor implementation promotion", (candidate) => {
-  candidate.executor.implementation_state = "IMPLEMENTED";
+  candidate.executor.implementation_state = "LIVE_ADAPTER_INSTALLED";
 });
 expectRejected("provider connectivity promotion", (candidate) => {
   candidate.executor.provider_connectivity_included = true;
@@ -183,8 +193,9 @@ expectRejected("Platform main rebinding", (candidate) => {
   candidate.platform_binding.main = "f".repeat(40);
 });
 expectRejected("bundle manifest rebinding", (candidate) => {
-  candidate.platform_binding.executable_bundle_manifest_raw_sha256 =
-    "f".repeat(64);
+  candidate.platform_binding.executable_bundle_manifest_raw_sha256 = "f".repeat(
+    64,
+  );
 });
 expectRejected("ordered artifact rebinding", (candidate) => {
   candidate.platform_binding.ordered_artifact_set_sha256 = "e".repeat(64);
@@ -215,8 +226,7 @@ expectRejected("caller SPKI digest", (candidate) => {
   candidate.trust_anchors[0].public_key_spki_sha256 = "a".repeat(64);
 });
 expectRejected("caller installation ref", (candidate) => {
-  candidate.trust_anchors[0].installation_ref =
-    "secret://caller/anchor.pem";
+  candidate.trust_anchors[0].installation_ref = "secret://caller/anchor.pem";
 });
 expectRejected("caller verifier", (candidate) => {
   candidate.trust_anchors[0].source_verifier_reference = "caller-verifier";
@@ -239,8 +249,7 @@ expectRejected("Data API OAuth write scope", (candidate) => {
   candidate.data_api_reader.oauth_scope = "rest:write";
 });
 expectRejected("Data API fine-grained write scope", (candidate) => {
-  candidate.data_api_reader.fine_grained_permission =
-    "data_api_config_write";
+  candidate.data_api_reader.fine_grained_permission = "data_api_config_write";
 });
 expectRejected("Data API write-scope promotion", (candidate) => {
   candidate.data_api_reader.write_scope = "PRESENT";
@@ -367,22 +376,299 @@ expectRejected("raw SQL serialization", (candidate) => {
       throw new Error(marker);
     },
   });
-  expectSafelyRejected("throwing canonical accessor", candidate, [marker]);
+  expectSafelyRejected(
+    "throwing canonical accessor",
+    candidate,
+    [marker],
+    "canonical own data-property descriptor",
+  );
   check(
-    getterInvoked,
-    "throwing canonical accessor: validator did not traverse the expected property",
+    !getterInvoked,
+    "throwing canonical accessor was invoked during validation",
   );
 }
 
 {
   const marker = "throwing-proxy-marker";
   const candidate = clone(profile);
+  let trapInvoked = false;
   candidate.credentials = new Proxy(candidate.credentials, {
     ownKeys() {
+      trapInvoked = true;
       throw new Error(marker);
     },
   });
-  expectSafelyRejected("throwing proxy", candidate, [marker]);
+  expectSafelyRejected(
+    "throwing proxy",
+    candidate,
+    [marker],
+    "must not use a Proxy representation",
+  );
+  check(!trapInvoked, "throwing proxy trap was invoked during validation");
+}
+
+{
+  const candidate = new Proxy(clone(profile), {});
+  expectSafelyRejected(
+    "transparent root Proxy",
+    candidate,
+    [],
+    "must not use a Proxy representation",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  candidate.credentials = new Proxy(candidate.credentials, {});
+  expectSafelyRejected(
+    "transparent nested object Proxy",
+    candidate,
+    [],
+    "must not use a Proxy representation",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  candidate.trust_anchors = new Proxy(candidate.trust_anchors, {});
+  expectSafelyRejected(
+    "transparent nested array Proxy",
+    candidate,
+    [],
+    "must not use a Proxy representation",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  const revocable = Proxy.revocable(candidate.credentials, {});
+  candidate.credentials = revocable.proxy;
+  revocable.revoke();
+  expectSafelyRejected(
+    "revoked Proxy",
+    candidate,
+    [],
+    "must not use a Proxy representation",
+  );
+}
+
+for (const trapName of [
+  "ownKeys",
+  "getOwnPropertyDescriptor",
+  "getPrototypeOf",
+  "get",
+]) {
+  const marker = `secret://candidate/${trapName}-proxy-marker`;
+  const candidate = clone(profile);
+  let trapInvoked = false;
+  candidate.credentials = new Proxy(candidate.credentials, {
+    [trapName]() {
+      trapInvoked = true;
+      throw new Error(marker);
+    },
+  });
+  expectSafelyRejected(
+    `throwing ${trapName} Proxy`,
+    candidate,
+    [marker],
+    "must not use a Proxy representation",
+  );
+  check(
+    !trapInvoked,
+    `throwing ${trapName} Proxy trap was invoked during validation`,
+  );
+}
+
+{
+  const marker = "secret://candidate/inherited-required-fields";
+  const candidate = Object.create(Object.assign(clone(profile), { marker }));
+  expectSafelyRejected(
+    "prototype-only required fields",
+    candidate,
+    [marker],
+    "must use the canonical record prototype",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  Object.setPrototypeOf(candidate.credentials, null);
+  expectSafelyRejected(
+    "inconsistent object prototype",
+    candidate,
+    [],
+    "must use the canonical record prototype",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  Object.setPrototypeOf(candidate.trust_anchors, null);
+  expectSafelyRejected(
+    "inconsistent array prototype",
+    candidate,
+    [],
+    "must use the canonical array prototype",
+  );
+}
+
+{
+  const marker = "secret://candidate/object-symbol-marker";
+  const candidate = clone(profile);
+  candidate.credentials[Symbol(marker)] = marker;
+  expectSafelyRejected(
+    "object symbol key",
+    candidate,
+    [marker],
+    "closed canonical key set",
+  );
+}
+
+{
+  const marker = "secret://candidate/array-symbol-marker";
+  const candidate = clone(profile);
+  candidate.trust_anchors[Symbol(marker)] = marker;
+  expectSafelyRejected(
+    "array symbol key",
+    candidate,
+    [marker],
+    "closed canonical array key set",
+  );
+}
+
+{
+  const marker = "secret://candidate/object-hidden-marker";
+  const candidate = clone(profile);
+  Object.defineProperty(candidate.credentials, "hidden_marker", {
+    configurable: true,
+    enumerable: false,
+    value: marker,
+    writable: true,
+  });
+  expectSafelyRejected(
+    "object non-enumerable addition",
+    candidate,
+    [marker],
+    "closed canonical key set",
+  );
+}
+
+{
+  const marker = "secret://candidate/array-hidden-marker";
+  const candidate = clone(profile);
+  Object.defineProperty(candidate.trust_anchors, "hidden_marker", {
+    configurable: true,
+    enumerable: false,
+    value: marker,
+    writable: true,
+  });
+  expectSafelyRejected(
+    "array non-enumerable addition",
+    candidate,
+    [marker],
+    "closed canonical array key set",
+  );
+}
+
+{
+  const marker = "secret://candidate/array-named-marker";
+  const candidate = clone(profile);
+  candidate.trust_anchors.named_marker = marker;
+  expectSafelyRejected(
+    "array named property",
+    candidate,
+    [marker],
+    "closed canonical array key set",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  Object.defineProperty(candidate.credentials, "connection_secret_ref", {
+    configurable: true,
+    enumerable: true,
+    value: candidate.credentials.connection_secret_ref,
+    writable: false,
+  });
+  expectSafelyRejected(
+    "object noncanonical data descriptor",
+    candidate,
+    [],
+    "canonical own data-property descriptor",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  Object.defineProperty(candidate.trust_anchors, "0", {
+    configurable: true,
+    enumerable: true,
+    value: candidate.trust_anchors[0],
+    writable: false,
+  });
+  expectSafelyRejected(
+    "array index noncanonical data descriptor",
+    candidate,
+    [],
+    "canonical own data-property descriptor",
+  );
+}
+
+{
+  const marker = "secret://candidate/array-accessor-marker";
+  const candidate = clone(profile);
+  let getterInvoked = false;
+  Object.defineProperty(candidate.trust_anchors, "0", {
+    configurable: true,
+    enumerable: true,
+    get() {
+      getterInvoked = true;
+      throw new Error(marker);
+    },
+  });
+  expectSafelyRejected(
+    "array accessor",
+    candidate,
+    [marker],
+    "canonical own data-property descriptor",
+  );
+  check(!getterInvoked, "array accessor was invoked during validation");
+}
+
+{
+  const candidate = clone(profile);
+  Reflect.deleteProperty(candidate.trust_anchors, "1");
+  expectSafelyRejected(
+    "sparse array",
+    candidate,
+    [],
+    "closed canonical array key set",
+  );
+}
+
+{
+  const marker = "secret://candidate/extra-numeric-index";
+  const candidate = clone(profile);
+  candidate.trust_anchors[candidate.trust_anchors.length] = marker;
+  expectSafelyRejected(
+    "extra numeric array index",
+    candidate,
+    [marker],
+    "closed canonical array key set",
+  );
+}
+
+{
+  const candidate = clone(profile);
+  Object.defineProperty(candidate.trust_anchors, "length", {
+    writable: false,
+  });
+  expectSafelyRejected(
+    "altered array length descriptor",
+    candidate,
+    [],
+    "canonical array descriptor",
+  );
 }
 
 console.log(

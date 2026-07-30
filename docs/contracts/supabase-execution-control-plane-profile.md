@@ -1,9 +1,9 @@
 # Supabase execution-control-plane profile
 
-This document defines Lifeline's source-only profile for a future governed
-Supabase executable-bundle worker. It closes the profile-definition gap; it
-does not implement the worker, install trust anchors, read credentials, connect
-to Supabase, or authorize SQL execution.
+This document defines Lifeline's source-only profile for a governed Supabase
+executable-bundle worker. The deterministic offline planner source is present;
+the live adapter is not installed. This profile does not install trust anchors,
+read credentials, connect to Supabase, or authorize SQL execution.
 
 ## Ownership and lifecycle
 
@@ -42,10 +42,11 @@ rebinding is not accepted.
 The named future executor is `lifeline.supabase-bundle-executor.v1`.
 
 Its current implementation state is
-`PROFILE_DEFINED_EXECUTOR_UNIMPLEMENTED`. Provider connectivity, credential
-values, and SQL authority are absent. A later implementation must bind to the
-exact profile identity and pass a separate source review before it can be
-considered for installation or action-time use.
+`OFFLINE_BUNDLE_EXECUTOR_SOURCE_IMPLEMENTED_LIVE_ADAPTER_UNINSTALLED`.
+Provider connectivity, credential values, and SQL authority are absent. The
+offline planner only validates the reviewed aggregate denominator and returns a
+content-addressed blocked plan. A later live-adapter installation must pass a
+separate source review before action-time use.
 
 ## Trust-anchor denominator
 
@@ -121,11 +122,12 @@ does not authorize cleanup, retirement, or deletion.
 This contract uses a closed canonical blocked projection. Any missing, extra,
 reordered, rebound, promoted, or caller-authored field fails validation.
 
-Rule: a complete profile can name a future control plane without claiming that
-the control plane exists.
+Rule: offline planner source can exist without claiming that its live adapter,
+trust, credentials, inverse mechanisms, or apply authority exist.
 
-Pattern: Platform defines the reviewed byte/evidence set; Lifeline defines the
-execution lineage; a later ATLAS registry packet binds the two.
+Pattern: Platform defines the reviewed byte/evidence set; Lifeline validates it
+offline and defines the execution lineage; a later installation packet may bind
+the live adapter.
 
 Failure mode: treating a source profile, connector visibility, or a secret
 reference as installed capability or apply authority.
