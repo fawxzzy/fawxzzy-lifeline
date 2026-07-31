@@ -212,6 +212,10 @@ const BLOCKERS = [
   },
 ] as const;
 
+function buildCanonicalBlockers(): JsonRecord[] {
+  return BLOCKERS.map((blocker) => ({ ...blocker }));
+}
+
 const CANONICAL_REQUEST = {
   adapter: {
     build_sha256: null,
@@ -498,7 +502,7 @@ export function validateSupabaseLiveAdapterInstallationEvidenceRequest(
 function buildCanonicalBlockedPlan(): JsonRecord {
   return {
     adapter_invocations: 0,
-    blockers: BLOCKERS,
+    blockers: buildCanonicalBlockers(),
     contract_version: SUPABASE_LIVE_ADAPTER_INSTALLATION_EVIDENCE_CONTRACT,
     evidence_denominator: {
       inverse_capability_count: INVERSE_CAPABILITY_EVIDENCE.length,

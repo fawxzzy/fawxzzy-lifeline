@@ -196,6 +196,89 @@ check(
   "all seven blocker categories must remain present",
 );
 
+const isolationBaseline =
+  getCanonicalSupabaseLiveAdapterInstallationBlockedResult();
+const isolationPlanJson = stableJsonStringify(isolationBaseline.plan);
+const isolationReceiptJson = stableJsonStringify(isolationBaseline.receipt);
+const isolationReceiptSha256 = isolationBaseline.receipt.receipt_sha256;
+const isolationBlockersJson = stableJsonStringify(
+  isolationBaseline.plan.blockers,
+);
+
+const mutationIsolationCases = [
+  {
+    label: "blocker array pop",
+    mutate(result) {
+      result.plan.blockers.pop();
+    },
+  },
+  {
+    label: "blocker array push",
+    mutate(result) {
+      result.plan.blockers.push({
+        category: "MUTATED",
+        code: "DO_NOT_PERSIST",
+        path: "result.plan.blockers",
+      });
+    },
+  },
+  {
+    label: "blocker array splice",
+    mutate(result) {
+      result.plan.blockers.splice(1, 2);
+    },
+  },
+  {
+    label: "blocker object mutation",
+    mutate(result) {
+      result.plan.blockers[0].code = "DO_NOT_PERSIST";
+    },
+  },
+  {
+    label: "nested result mutation",
+    mutate(result) {
+      result.plan.evidence_denominator.trust_domain_count = 0;
+      result.plan.lifecycle.execution = "DO_NOT_PERSIST";
+      result.receipt.lifecycle.execution = "DO_NOT_PERSIST";
+    },
+  },
+];
+
+for (const { label, mutate } of mutationIsolationCases) {
+  const mutableResult =
+    getCanonicalSupabaseLiveAdapterInstallationBlockedResult();
+  mutate(mutableResult);
+
+  let isolationAdapterCalls = 0;
+  const laterResult = planSupabaseLiveAdapterInstallation(request, {
+    installReadyEvidence() {
+      isolationAdapterCalls += 1;
+    },
+  });
+
+  check(laterResult.request_valid === true, `${label} must preserve validity`);
+  check(
+    stableJsonStringify(laterResult.plan?.blockers) === isolationBlockersJson,
+    `${label} must preserve later blocker count and contents`,
+  );
+  check(
+    stableJsonStringify(laterResult.plan) === isolationPlanJson,
+    `${label} must preserve later canonical plan bytes`,
+  );
+  check(
+    stableJsonStringify(laterResult.receipt) === isolationReceiptJson,
+    `${label} must preserve later canonical receipt bytes`,
+  );
+  check(
+    laterResult.receipt?.receipt_sha256 === isolationReceiptSha256,
+    `${label} must preserve later canonical receipt digest`,
+  );
+  check(
+    laterResult.adapter_invocations === 0 && isolationAdapterCalls === 0,
+    `${label} must preserve zero installer calls`,
+  );
+}
+
 const locations = collectLocations(request);
 const leaves = locations.filter(({ kind }) => kind === "leaf");
 const containers = locations.filter(({ kind }) => kind !== "leaf");
