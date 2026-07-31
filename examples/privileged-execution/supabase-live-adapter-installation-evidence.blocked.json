@@ -1,0 +1,30 @@
+{
+  "blocker_codes": [
+    "LIVE_ADAPTER_INSTALLATION_EVIDENCE_MISSING",
+    "ACTION_TIME_AUTHORITY_AND_CONSUMPTION_EVIDENCE_MISSING",
+    "TRUST_DOMAIN_INSTALLATION_EVIDENCE_MISSING",
+    "SANITIZED_DATA_API_READER_EVIDENCE_MISSING",
+    "SECRET_REFERENCE_TRANSPORT_AND_SCOPE_EVIDENCE_MISSING",
+    "INVERSE_CAPABILITY_EVIDENCE_MISSING",
+    "APPLY_NOT_ADMITTED"
+  ],
+  "contract_version": "atlas.supabase.live-adapter-installation-evidence.v1",
+  "evidence_denominator": {
+    "inverse_capability_count": 7,
+    "trust_domain_count": 12
+  },
+  "lifecycle": {
+    "apply_admitted": false,
+    "execution": "EXECUTION_BLOCKED",
+    "source": "SOURCE_READY"
+  },
+  "live_facts": {
+    "adapter_installation": "UNKNOWN",
+    "credentials": "UNKNOWN",
+    "data_api_reader": "UNKNOWN",
+    "inverse_capabilities": ["UNKNOWN"],
+    "trust_domains": ["UNKNOWN"]
+  },
+  "receipt_sha256": "7b39c7e66c2faa4740756375809500df98f840ba6fedb6198fa5d61db48d1303",
+  "status": "BLOCKED"
+}
